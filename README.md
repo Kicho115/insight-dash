@@ -3,6 +3,9 @@
 First, install the needed dependencies:
 
 ```bash
+# Instal pnpm if needed
+# npm install -g pnpm
+
 pnpm i
 ```
 
