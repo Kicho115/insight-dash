@@ -1,7 +1,7 @@
 // page.tsx
 "use client";
 
-import {signInWithGoogle} from "@/../firebase/login"
+import { signInWithGoogle } from "@/firebase/login";
 
 export default function LoginPage() {
   const handleLogin = async () => {
