@@ -2,6 +2,7 @@ export type User = {
   id: string;
   displayName: string;
   email: string;
+  createdAt: Date;
   teams: Team[];
   position: string;
 };
@@ -29,4 +30,5 @@ export type File = {
   isPublic: boolean;
   creatorId: string;
   permissions: FilePermission[]; // Who can access this file
+  isLocked: boolean; // To prevent deletion while other users are using it
 };
