@@ -10,7 +10,6 @@ export async function signInWithGoogle() {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    const token = credential?.accessToken;
 
     await saveNewUserToFirestore(user);
 
