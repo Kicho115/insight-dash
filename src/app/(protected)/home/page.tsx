@@ -6,8 +6,12 @@ import { useState, useEffect } from "react";
 // Import CSS
 import styles from "./styles.module.css";
 
+// Import user
+import { useAuthContext } from "@/context/AuthContext";
+
 const HomePage = () => {
   const [greeting, setGreeting] = useState("");
+  const { user } = useAuthContext();
 
   useEffect(() => {
     const getGreeting = () => {
@@ -25,7 +29,11 @@ const HomePage = () => {
     setGreeting(getGreeting());
   }, []);
 
-  return <div className={styles.container}>{greeting}</div>;
+  return (
+    <div className={styles.container}>
+      {greeting}, {user?.displayName}
+    </div>
+  );
 };
 
 export default HomePage;

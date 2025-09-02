@@ -3,6 +3,9 @@
 // Import CSS
 import styles from "./styles.module.css";
 
+// Import user
+import { useAuthContext } from "@/context/AuthContext";
+
 import {
   IoPersonCircleSharp,
   IoFolderOpen,
@@ -12,11 +15,13 @@ import {
 } from "react-icons/io5";
 
 export const Sidebar = () => {
+  const { user } = useAuthContext();
+
   return (
     <div className={styles.container}>
       <div className={styles.user}>
         <IoPersonCircleSharp className={styles.logo} />
-        <p>John Doe</p>
+        <p>{user?.displayName}</p>
       </div>
       <hr />
       <div className={styles.item}>
