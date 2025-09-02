@@ -29,4 +29,5 @@ export type File = {
   isPublic: boolean;
   creatorId: string;
   permissions: FilePermission[]; // Who can access this file
+  isLocked: boolean; // To prevent deletion while other users are using it
 };
