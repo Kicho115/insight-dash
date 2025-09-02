@@ -14,7 +14,7 @@ export async function signInWithGoogle() {
 
     await saveNewUserToFirestore(user);
 
-    return { user, token };
+    return { user };
   } catch (error: any) {
     const credential = GoogleAuthProvider.credentialFromError(error);
     console.error("Error signing in:", error);

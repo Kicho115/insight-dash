@@ -5,7 +5,7 @@ import { signInWithGoogle } from "@/firebase/login";
 
 export default function LoginPage() {
   const handleLogin = async () => {
-    const { user, token, error } = await signInWithGoogle();
+    const { user, error } = await signInWithGoogle();
     if (user) {
       alert(`Bienvenido ${user.displayName}`);
     } else {
