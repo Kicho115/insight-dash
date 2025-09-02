@@ -1,19 +1,15 @@
 // login.ts
-import { GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
-import {auth} from "./config"
-
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "./config";
 
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({prompt: "select_account"})
-    try {
+  provider.setCustomParameters({ prompt: "select_account" });
+  try {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
     const credential = GoogleAuthProvider.credentialFromResult(result);
     const token = credential?.accessToken;
-
-    console.log("Usuario:", user);
-    console.log("Token:", token);
 
     return { user, token };
   } catch (error: any) {
