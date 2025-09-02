@@ -17,14 +17,14 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuthContext();
+  const { firebaseAuthUser } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
+    if (!firebaseAuthUser) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [firebaseAuthUser, router]);
 
   return (
     <div style={{ display: "flex", height: "100dvh" }}>

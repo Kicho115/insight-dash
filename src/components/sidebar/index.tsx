@@ -21,7 +21,7 @@ export const Sidebar = () => {
     <div className={styles.container}>
       <div className={styles.user}>
         <IoPersonCircleSharp className={styles.logo} />
-        <p>{user?.displayName}</p>
+        <p>{user?.name}</p>
       </div>
       <hr />
       <div className={styles.item}>

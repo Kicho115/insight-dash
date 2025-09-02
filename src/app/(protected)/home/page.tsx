@@ -31,7 +31,7 @@ const HomePage = () => {
 
   return (
     <div className={styles.container}>
-      {greeting}, {user?.displayName}
+      {greeting}, {user?.name}
     </div>
   );
 };

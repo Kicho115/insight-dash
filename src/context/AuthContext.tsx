@@ -1,5 +1,6 @@
 "use client";
 
+// React imports
 import {
   useState,
   useEffect,
@@ -7,10 +8,19 @@ import {
   useContext,
   ReactNode,
 } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+
+// Firebase imports
+import { onAuthStateChanged, User as FirebaseAuthUser } from "firebase/auth";
 import { auth } from "@/firebase/config";
 
+// DB imports
+import { getUserFromFirestore } from "@/firebase/db/user";
+
+// Import types
+import { User } from "@/types/user";
+
 interface AuthContextType {
+  firebaseAuthUser: FirebaseAuthUser | null;
   user: User | null;
   loading: boolean;
 }
@@ -21,6 +31,7 @@ interface AuthContextType {
  * It holds the current user and loading status. It is consumed by the `useAuthContext` hook.
  */
 export const AuthContext = createContext<AuthContextType>({
+  firebaseAuthUser: null,
   user: null,
   loading: true,
 });
@@ -28,9 +39,10 @@ export const AuthContext = createContext<AuthContextType>({
 /**
  * @hook
  * @description A custom hook to access the authentication context.
- * Provides the current user and session loading state.
+ * Provides the current Firebase user, user profile, and session loading state.
  * @returns An object containing:
- * - `user`: The Firebase user object if the session is active, or `null`.
+ * - `firebaseAuthUser`: The Firebase user object if authenticated, or `null`.
+ * - `user`: The complete user profile from Firestore, or `null`.
  * - `loading`: A boolean that is `true` while verifying the initial session.
  */
 export const useAuthContext = () => useContext(AuthContext);
@@ -44,13 +56,23 @@ export const useAuthContext = () => useContext(AuthContext);
  * @returns {JSX.Element} The provider component wrapping the children.
  */
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
+  const [firebaseAuthUser, setFirebaseAuthUser] =
+    useState<FirebaseAuthUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setFirebaseAuthUser(firebaseUser);
+
+      if (firebaseUser) {
+        try {
+          const userData = await getUserFromFirestore(firebaseUser.uid);
+          setUser(userData);
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -61,7 +83,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ firebaseAuthUser, user, loading }}>
       {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );

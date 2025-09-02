@@ -1,6 +1,6 @@
 export type User = {
   id: string;
-  displayName: string;
+  name: string;
   email: string;
   createdAt: Date;
   teams: Team[];
