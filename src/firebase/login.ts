@@ -1,5 +1,9 @@
 // login.ts
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  type AuthError,
+} from "firebase/auth";
 import { auth } from "./config";
 import { saveNewUserToFirestore } from "./db/user";
 
@@ -13,8 +17,10 @@ export async function signInWithGoogle() {
     await saveNewUserToFirestore(user);
 
     return { user };
-  } catch (error: any) {
-    const credential = GoogleAuthProvider.credentialFromError(error);
+  } catch (error: unknown) {
+    const credential = GoogleAuthProvider.credentialFromError(
+      error as AuthError
+    );
     console.error("Error signing in:", error);
     return { error, credential };
   }
