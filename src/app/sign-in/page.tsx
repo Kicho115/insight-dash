@@ -9,7 +9,7 @@ export default function LoginPage() {
     if (user) {
       alert(`Bienvenido ${user.displayName}`);
     } else {
-      alert("Error en el login: " + (error?.message || "desconocido"));
+      alert("Error en el login: " + "desconocido");
     }
   };
 
