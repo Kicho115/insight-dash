@@ -31,7 +31,13 @@ const HomePage = () => {
 
   return (
     <div className={styles.container}>
-      {greeting}, {user?.name}
+      <div className={styles.greetingWrapper}>
+        <div className={styles.greetingContent}>
+          <h1 className={styles.greetingText}>{greeting}</h1>
+          <p className={styles.userName}>{user?.name}</p>
+          <div className={styles.underline}></div>
+        </div>
+      </div>
     </div>
   );
 };
