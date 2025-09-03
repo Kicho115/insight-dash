@@ -22,7 +22,7 @@ export default function ProtectedLayout({
 
   useEffect(() => {
     if (!firebaseAuthUser) {
-      router.push("/");
+      router.push("/sign-in");
     }
   }, [firebaseAuthUser, router]);
 
