@@ -14,7 +14,7 @@ import { onAuthStateChanged, User as FirebaseAuthUser } from "firebase/auth";
 import { auth } from "@/firebase/config";
 
 // DB imports
-import { getUserFromFirestore } from "@/firebase/db/user";
+import { getUserFromFirestore, onUserProfileChange } from "@/firebase/db/user";
 
 // Import types
 import { User } from "@/types/user";
@@ -62,24 +62,41 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    // This will hold the unsubscribe function for the user profile listener
+    let userProfileUnsubscribe: (() => void) | null = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setFirebaseAuthUser(firebaseUser);
 
-      if (firebaseUser) {
-        try {
-          const userData = await getUserFromFirestore(firebaseUser.uid);
-          setUser(userData);
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
+      // Important: If a previous user profile listener is active, clean it up
+      if (userProfileUnsubscribe) {
+        userProfileUnsubscribe();
       }
-      setLoading(false);
+
+      if (firebaseUser) {
+        // User is logged in, set up the real-time listener for their profile
+        userProfileUnsubscribe = onUserProfileChange(
+          firebaseUser.uid,
+          (userData) => {
+            // This callback will be triggered whenever the user document changes
+            setUser(userData);
+            setLoading(false);
+          }
+        );
+      } else {
+        // User is logged out, clear user data
+        setUser(null);
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    // Cleanup function for the effect
+    return () => {
+      authUnsubscribe(); // Unsubscribe from auth state changes
+      if (userProfileUnsubscribe) {
+        userProfileUnsubscribe(); // Unsubscribe from profile changes
+      }
+    };
   }, []);
 
   return (

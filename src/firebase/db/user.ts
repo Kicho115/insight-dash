@@ -1,6 +1,6 @@
 // Firebase imports
 import { db } from "@/firebase/config";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 // Import types
 import { User as NewFirebaseUser } from "firebase/auth"; // User type
@@ -56,4 +56,28 @@ export const getUserFromFirestore = async (
     console.error("Error fetching user from Firestore:", error);
   }
   return null;
+};
+
+/**
+ * @function onUserProfileChange
+ * @description Listens for real-time changes to a user's profile document in Firestore.
+ * @param {string} uid - The user's unique ID.
+ * @param {(user: User | null) => void} callback - The function to call with the user data when it changes.
+ * @returns {import("firebase/firestore").Unsubscribe} A function to unsubscribe from the listener.
+ */
+export const onUserProfileChange = (
+  uid: string,
+  callback: (user: User | null) => void
+) => {
+  const userDocRef = doc(db, "users", uid);
+  // Returns the unsubscribe function
+  return onSnapshot(userDocRef, (docSnap) => {
+    if (docSnap.exists()) {
+      // Document exists, pass the data to the callback
+      callback({ id: docSnap.id, ...docSnap.data() } as User);
+    } else {
+      // Document does not exist (yet)
+      callback(null);
+    }
+  });
 };
