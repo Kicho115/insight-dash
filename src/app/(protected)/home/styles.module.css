@@ -48,6 +48,20 @@
   animation: expandLine 1s ease-out 0.3s both;
 }
 
+.logoutButton {
+  width: 100%;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #495057;
+  font-family: inherit;
+}
+
+.logoutButton:hover {
+  background-color: #ffe3e3;
+  color: #d90429;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
