@@ -1,6 +1,7 @@
 // login.ts
 import {
   GoogleAuthProvider,
+  signOut,
   signInWithPopup,
   type AuthError,
 } from "firebase/auth";
@@ -25,3 +26,18 @@ export async function signInWithGoogle() {
     return { error, credential };
   }
 }
+
+/**
+ * @function signOutUser
+ * @description Signs out the currently authenticated user.
+ * @returns {Promise<{ error: Error | null }>} An object containing an error if one occurred during the process.
+ */
+export const signOutUser = async () => {
+  let error: Error | null = null;
+  try {
+    await signOut(auth);
+  } catch (e) {
+    error = e as Error;
+  }
+  return { error };
+};

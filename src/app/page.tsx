@@ -1,22 +1,28 @@
-// page.tsx
+// app/page.tsx
 "use client";
 
-import { signInWithGoogle } from "@/firebase/login";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthContext } from "@/context/AuthContext";
 
-export default function LoginPage() {
-  const handleLogin = async () => {
-    const { user, error } = await signInWithGoogle();
-    if (user) {
-      alert(`Bienvenido ${user.displayName}`);
-    } else {
-      alert("Error en el login: " + "desconocido");
+export default function HomePage() {
+  const { firebaseAuthUser, loading } = useAuthContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Only redirect after loading is complete
+    if (!loading) {
+      if (firebaseAuthUser) {
+        // If there is a user, take them to the home page
+        router.push("/home");
+      } else {
+        // If there is no user, take them to sign in
+        router.push("/sign-in");
+      }
     }
-  };
+  }, [firebaseAuthUser, loading, router]);
 
-  return (
-    <div>
-      <h1>Login con Firebase + Google</h1>
-      <button onClick={handleLogin}>Iniciar sesión con Google</button>
-    </div>
-  );
+  // Show a loading screen while checking the session
+  // to avoid flickering of the login page
+  return <div>Loading and redirecting...</div>;
 }
