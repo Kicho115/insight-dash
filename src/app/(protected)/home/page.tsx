@@ -7,11 +7,11 @@ import { useState, useEffect } from "react";
 import styles from "./styles.module.css";
 
 // Import user
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthProvider";
 
 const HomePage = () => {
   const [greeting, setGreeting] = useState("");
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   useEffect(() => {
     const getGreeting = () => {

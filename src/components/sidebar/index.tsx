@@ -7,11 +7,12 @@ import styles from "./styles.module.css";
 import { useRouter } from "next/navigation";
 
 // Import user
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthProvider";
 
 // Firebase imports
-import { signOutUser } from "@/firebase/login";
+import { signOutUser } from "@/services/firebase/auth";
 
+// Import icons
 import {
   IoPersonCircleSharp,
   IoFolderOpen,
@@ -27,7 +28,7 @@ import {
  * @returns {JSX.Element} The rendered sidebar component.
  */
 export const Sidebar = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const router = useRouter();
 
   /**

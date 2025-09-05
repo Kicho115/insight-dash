@@ -3,10 +3,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthProvider";
 
 export default function HomePage() {
-  const { firebaseAuthUser, loading } = useAuthContext();
+  const { firebaseAuthUser, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {

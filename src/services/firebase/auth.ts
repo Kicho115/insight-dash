@@ -1,8 +1,3 @@
-// login.ts
-/**
- * @file This file contains all Firebase Authentication-related functions.
- */
-
 // Firebase imports
 import {
   GoogleAuthProvider,
@@ -17,7 +12,7 @@ import {
 import { auth } from "./config";
 
 // Database imports
-import { saveNewUserToFirestore } from "./db/user";
+import { saveNewUserToFirestore } from "../user";
 
 /**
  * @function signInWithGoogle
@@ -44,17 +39,6 @@ export async function signInWithGoogle() {
   }
 }
 
-/**
- * @typedef {Object} SignUpCredentials
- * @property {string} email - The user's email address.
- * @property {string} password - The user's chosen password.
- * @property {string} name - The user's full name.
- * @property {string} team - The user's team name.
- */
-
-/**
- * TypeScript interface for sign-up credentials.
- */
 interface SignUpCredentials {
   email: string;
   password: string;
@@ -80,7 +64,14 @@ export async function signUpWithEmail({
     await updateProfile(user, { displayName: name });
 
     // Save the new user document to Firestore with extra details
-    await saveNewUserToFirestore(user);
+    try {
+      await saveNewUserToFirestore(user);
+    } catch (firestoreError) {
+      // Log the Firestore error but don't fail the entire signup process
+      console.error("Failed to save user to Firestore:", firestoreError);
+      // The auth user was created successfully, so we can still return the user
+      // The user profile listener will handle creating the document later
+    }
 
     return { user };
   } catch (error: unknown) {

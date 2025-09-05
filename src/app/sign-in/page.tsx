@@ -2,19 +2,19 @@
 "use client";
 
 // React and Next.js imports
-import { useState, useEffect, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // Style imports
 import styles from "./styles.module.css";
 
 // Context and Firebase imports
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthProvider";
 import {
   signInWithGoogle,
   signInWithEmail,
   signUpWithEmail,
-} from "@/firebase/login";
+} from "@/services/firebase/auth";
 import { AuthError } from "firebase/auth";
 
 /**
@@ -56,13 +56,14 @@ export default function SignInPage() {
   const [name, setName] = useState("");
 
   // Auth context and router
-  const { firebaseAuthUser, loading: authLoading } = useAuthContext();
+  const { firebaseAuthUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Effect to redirect if the user is already logged in
+  // Effect to handle redirection after successful authentication
   useEffect(() => {
-    if (!authLoading && firebaseAuthUser) {
-      router.push("/home"); // Redirect to main protected page
+    if (firebaseAuthUser && !authLoading) {
+      // User is authenticated, redirect to home
+      router.replace("/home");
     }
   }, [firebaseAuthUser, authLoading, router]);
 
