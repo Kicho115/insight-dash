@@ -1,8 +1,3 @@
-// login.ts
-/**
- * @file This file contains all Firebase Authentication-related functions.
- */
-
 // Firebase imports
 import {
   GoogleAuthProvider,
@@ -11,13 +6,14 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
   type AuthError,
   type User as FirebaseAuthUser,
 } from "firebase/auth";
 import { auth } from "./config";
 
 // Database imports
-import { saveNewUserToFirestore } from "./db/user";
+import { saveNewUserToFirestore } from "../user";
 
 /**
  * @function signInWithGoogle
@@ -44,17 +40,6 @@ export async function signInWithGoogle() {
   }
 }
 
-/**
- * @typedef {Object} SignUpCredentials
- * @property {string} email - The user's email address.
- * @property {string} password - The user's chosen password.
- * @property {string} name - The user's full name.
- * @property {string} team - The user's team name.
- */
-
-/**
- * TypeScript interface for sign-up credentials.
- */
 interface SignUpCredentials {
   email: string;
   password: string;
@@ -80,7 +65,14 @@ export async function signUpWithEmail({
     await updateProfile(user, { displayName: name });
 
     // Save the new user document to Firestore with extra details
-    await saveNewUserToFirestore(user);
+    try {
+      await saveNewUserToFirestore(user);
+    } catch (firestoreError) {
+      // Log the Firestore error but don't fail the entire signup process
+      console.error("Failed to save user to Firestore:", firestoreError);
+      // The auth user was created successfully, so we can still return the user
+      // The user profile listener will handle creating the document later
+    }
 
     return { user };
   } catch (error: unknown) {
@@ -120,3 +112,21 @@ export const signOutUser = async () => {
   }
   return { error };
 };
+
+/**
+ * @function sendPasswordReset
+ * @description Sends a password reset email to the given address.
+ * @param {string} email - The user's email address.
+ * @returns {Promise<{ success: boolean; error?: AuthError }>} An object indicating the outcome.
+ */
+export async function sendPasswordReset(
+  email: string
+): Promise<{ success: boolean; error?: AuthError }> {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error sending password reset email:", error);
+    return { success: false, error: error as AuthError };
+  }
+}

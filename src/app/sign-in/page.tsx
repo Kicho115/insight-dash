@@ -2,19 +2,23 @@
 "use client";
 
 // React and Next.js imports
-import { useState, useEffect, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // Style imports
 import styles from "./styles.module.css";
 
+// Component imports
+import { Modal } from "@/components/modal";
+import { PasswordResetModal } from "@/components/passwordResetModal";
+
 // Context and Firebase imports
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthProvider"; // Corrected hook name
 import {
   signInWithGoogle,
   signInWithEmail,
   signUpWithEmail,
-} from "@/firebase/login";
+} from "@/services/firebase/auth";
 import { AuthError } from "firebase/auth";
 
 /**
@@ -55,14 +59,18 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
 
+  // Controls visibility of the password reset request modal
+  const [showResetModal, setShowResetModal] = useState(false);
+
   // Auth context and router
-  const { firebaseAuthUser, loading: authLoading } = useAuthContext();
+  const { firebaseAuthUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Effect to redirect if the user is already logged in
+  // Effect to handle redirection after successful authentication
   useEffect(() => {
-    if (!authLoading && firebaseAuthUser) {
-      router.push("/home"); // Redirect to main protected page
+    if (firebaseAuthUser && !authLoading) {
+      // User is authenticated, redirect to home
+      router.replace("/home");
     }
   }, [firebaseAuthUser, authLoading, router]);
 
@@ -120,16 +128,14 @@ export default function SignInPage() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {isSignUp && (
-            <>
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className={styles.input}
-              />
-            </>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className={styles.input}
+            />
           )}
           <input
             type="email"
@@ -159,10 +165,21 @@ export default function SignInPage() {
           </button>
         </form>
 
+        {!isSignUp && (
+          <div className={styles.forgotPasswordContainer}>
+            <button
+              className={styles.forgotButton}
+              onClick={() => setShowResetModal(true)}
+            >
+              Forgot your password?
+            </button>
+          </div>
+        )}
+
         <div className={styles.dividerContainer}>
-          <div className={styles.dividerLine}></div>
+          <div className={styles.dividerLine} />
           <span className={styles.dividerText}>OR</span>
-          <div className={styles.dividerLine}></div>
+          <div className={styles.dividerLine} />
         </div>
 
         <button
@@ -205,6 +222,13 @@ export default function SignInPage() {
           </button>
         </p>
       </div>
+
+      <Modal isOpen={showResetModal} onClose={() => setShowResetModal(false)}>
+        <PasswordResetModal
+          onClose={() => setShowResetModal(false)}
+          initialEmail={email}
+        />
+      </Modal>
     </div>
   );
 }
