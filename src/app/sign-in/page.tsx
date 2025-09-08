@@ -16,6 +16,8 @@ import {
   signUpWithEmail,
 } from "@/services/firebase/auth";
 import { AuthError } from "firebase/auth";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/firebase/config";
 
 /**
  * @function getFirebaseAuthErrorMessage
@@ -38,7 +40,17 @@ const getFirebaseAuthErrorMessage = (error: AuthError): string => {
     default:
       return "An unexpected error occurred. Please try again.";
   }
-};
+}
+
+/**
+ * Masks the email address for privacy in the confirmation modal.
+ * Shows only the last 3 characters before "@" and the domain.
+ */
+const maskEmail = (email: string) => {
+  const [local, domain] = email.split("@");
+  if (local.length <= 3) return "***@" + domain;
+  return "*".repeat(local.length - 3) + local.slice(-3) + "@" + domain;
+}
 
 /**
  * @page SignInPage
@@ -54,6 +66,15 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+
+  // Tracks failed login attempts to trigger password recovery option
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
+  // Controls visibility of the password reset request modal
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  // Controls visibility of the confirmation modal after sending reset email
+  const [showSentModal, setShowSentModal] = useState(false);
 
   // Auth context and router
   const { firebaseAuthUser, loading: authLoading } = useAuth();
@@ -81,6 +102,9 @@ export default function SignInPage() {
       result = await signUpWithEmail({ email, password, name });
     } else {
       result = await signInWithEmail(email, password);
+      // Increment failedAttempts if login fails
+      if (result.error) setFailedAttempts((prev) => prev + 1);
+      else setFailedAttempts(0);
     }
 
     if (result.error) {
@@ -88,6 +112,21 @@ export default function SignInPage() {
     }
     // On success, the useEffect hook will handle redirection.
     setIsLoading(false);
+  };
+
+  /**
+   * @function handlePasswordReset
+   * @description Sends password reset email using Firebase.
+   * Shows confirmation modal on success.
+   */
+  const handlePasswordReset = async () => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setShowResetModal(false);
+      setShowSentModal(true);
+    } catch (err) {
+      setError("Error sending reset email. Try again.");
+    }
   };
 
   /**
@@ -192,6 +231,59 @@ export default function SignInPage() {
           </svg>
           Sign in with Google
         </button>
+
+        {/* Show password recovery option after 3 failed login attempts */}
+        {failedAttempts >= 3 && (
+          <button
+            className={styles.forgotButton}
+            onClick={() => setShowResetModal(true)}
+          >
+            ¿Forgot your password?
+          </button>
+        )}
+
+        {/* Modal: Request password reset */}
+        {showResetModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+              {/* Close modal button */}
+              <button
+                className={styles.closeButton}
+                onClick={() => setShowResetModal(false)}
+              >
+                ×
+              </button>
+              <h2>¿Forgot your password?</h2>
+              <p>Receive an email to reset your password.</p>
+              <div className={styles.modalActions}>
+                {/* Accept triggers password reset */}
+                <button onClick={handlePasswordReset}>Accept</button>
+                {/* Cancel closes modal */}
+                <button onClick={() => setShowResetModal(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Confirmation after sending password reset email */}
+        {showSentModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+              {/* Close modal button */}
+              <button
+                className={styles.closeButton}
+                onClick={() => setShowSentModal(false)}
+              >
+                ×
+              </button>
+              <h2>Email Sent</h2>
+              <p>
+                An email has been sent to <b>{maskEmail(email)}</b> to reset
+                your password.
+              </p>
+            </div>
+          </div>
+        )}
 
         <p className={styles.toggleText}>
           {isSignUp ? "Already have an account?" : "Don't have an account?"}
