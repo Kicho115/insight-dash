@@ -101,7 +101,7 @@ export const PasswordResetModal = ({
           <h2 className={styles.title}>Forgot Your Password?</h2>
           <p className={styles.description}>
             No problem. Enter the email address associated with your account,
-            and we'll send you a link to reset your password.
+            and we&apos;ll send you a link to reset your password.
           </p>
           <form onSubmit={handleSubmit}>
             <input
