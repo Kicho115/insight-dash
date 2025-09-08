@@ -7,19 +7,19 @@ import { useRouter } from "next/navigation";
 
 // Style imports
 import styles from "./styles.module.css";
+
+// Component imports
 import { Modal } from "@/components/modal";
-import { PasswordResetForm } from "@/components/passwordResetModal";
+import { PasswordResetModal } from "@/components/passwordResetModal";
 
 // Context and Firebase imports
-import { useAuth } from "@/context/AuthProvider";
+import { useAuth } from "@/context/AuthProvider"; // Corrected hook name
 import {
   signInWithGoogle,
   signInWithEmail,
   signUpWithEmail,
 } from "@/services/firebase/auth";
 import { AuthError } from "firebase/auth";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/services/firebase/config";
 
 /**
  * @function getFirebaseAuthErrorMessage
@@ -45,16 +45,6 @@ const getFirebaseAuthErrorMessage = (error: AuthError): string => {
 };
 
 /**
- * Masks the email address for privacy in the confirmation modal.
- * Shows only the last 3 characters before "@" and the domain.
- */
-const maskEmail = (email: string) => {
-  const [local, domain] = email.split("@");
-  if (local.length <= 3) return "***@" + domain;
-  return "*".repeat(local.length - 3) + local.slice(-3) + "@" + domain;
-};
-
-/**
  * @page SignInPage
  * @description A page for user sign-in and registration.
  */
@@ -71,10 +61,6 @@ export default function SignInPage() {
 
   // Controls visibility of the password reset request modal
   const [showResetModal, setShowResetModal] = useState(false);
-
-  // Controls visibility of the confirmation modal after sending reset email
-  const [showSentModal, setShowSentModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
 
   // Auth context and router
   const { firebaseAuthUser, loading: authLoading } = useAuth();
@@ -112,22 +98,6 @@ export default function SignInPage() {
   };
 
   /**
-   * @function handlePasswordReset
-   * @description Sends password reset email using Firebase.
-   * Shows confirmation modal on success.
-   */
-  const handlePasswordReset = async (resetEmailInput: string) => {
-    try {
-      await sendPasswordResetEmail(auth, resetEmailInput);
-      setResetEmail(resetEmailInput);
-      setShowResetModal(false);
-      setShowSentModal(true);
-    } catch (err) {
-      setError("Error sending reset email. Try again.");
-    }
-  };
-
-  /**
    * @function handleGoogleSignIn
    * @description Handles the Google Sign-In button click.
    */
@@ -158,16 +128,14 @@ export default function SignInPage() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {isSignUp && (
-            <>
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className={styles.input}
-              />
-            </>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className={styles.input}
+            />
           )}
           <input
             type="email"
@@ -197,10 +165,21 @@ export default function SignInPage() {
           </button>
         </form>
 
+        {!isSignUp && (
+          <div className={styles.forgotPasswordContainer}>
+            <button
+              className={styles.forgotButton}
+              onClick={() => setShowResetModal(true)}
+            >
+              Forgot your password?
+            </button>
+          </div>
+        )}
+
         <div className={styles.dividerContainer}>
-          <div className={styles.dividerLine}></div>
+          <div className={styles.dividerLine} />
           <span className={styles.dividerText}>OR</span>
-          <div className={styles.dividerLine}></div>
+          <div className={styles.dividerLine} />
         </div>
 
         <button
@@ -230,35 +209,6 @@ export default function SignInPage() {
           Sign in with Google
         </button>
 
-        {/* Show password recovery option */}
-        {!isSignUp && (
-          <button
-            className={styles.forgotButton}
-            onClick={() => setShowResetModal(true)}
-          >
-            ¿Forgot your password?
-          </button>
-        )}
-
-        {/* Modal: Request password reset */}
-        <Modal isOpen={showResetModal} onClose={() => setShowResetModal(false)}>
-          <PasswordResetForm
-            onSubmit={handlePasswordReset}
-            onCancel={() => setShowResetModal(false)}
-          />
-        </Modal>
-
-        {/* Modal: Confirmation after sending password reset email */}
-        <Modal isOpen={showSentModal} onClose={() => setShowSentModal(false)}>
-          <div>
-            <h2>Email Sent</h2>
-            <p>
-              An email has been sent to <b>{resetEmail}</b> to reset your
-              password.
-            </p>
-          </div>
-        </Modal>
-
         <p className={styles.toggleText}>
           {isSignUp ? "Already have an account?" : "Don't have an account?"}
           <button
@@ -272,6 +222,13 @@ export default function SignInPage() {
           </button>
         </p>
       </div>
+
+      <Modal isOpen={showResetModal} onClose={() => setShowResetModal(false)}>
+        <PasswordResetModal
+          onClose={() => setShowResetModal(false)}
+          initialEmail={email}
+        />
+      </Modal>
     </div>
   );
 }

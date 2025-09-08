@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
   type AuthError,
   type User as FirebaseAuthUser,
 } from "firebase/auth";
@@ -111,3 +112,21 @@ export const signOutUser = async () => {
   }
   return { error };
 };
+
+/**
+ * @function sendPasswordReset
+ * @description Sends a password reset email to the given address.
+ * @param {string} email - The user's email address.
+ * @returns {Promise<{ success: boolean; error?: AuthError }>} An object indicating the outcome.
+ */
+export async function sendPasswordReset(
+  email: string
+): Promise<{ success: boolean; error?: AuthError }> {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error sending password reset email:", error);
+    return { success: false, error: error as AuthError };
+  }
+}
