@@ -4,6 +4,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthProvider";
+import { LoadingSpinner } from "@/components/loading";
 
 export default function HomePage() {
   const { firebaseAuthUser, loading } = useAuth();
@@ -24,5 +25,5 @@ export default function HomePage() {
 
   // Show a loading screen while checking the session
   // to avoid flickering of the login page
-  return <div>Loading and redirecting...</div>;
+  return <LoadingSpinner fullScreen text="Redirecting..." size="medium" />;
 }

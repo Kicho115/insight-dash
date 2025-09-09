@@ -11,6 +11,7 @@ import styles from "./styles.module.css";
 // Component imports
 import { Modal } from "@/components/modal";
 import { PasswordResetModal } from "@/components/passwordResetModal";
+import { LoadingSpinner } from "@/components/loading";
 
 // Context and Firebase imports
 import { useAuth } from "@/context/AuthProvider"; // Corrected hook name
@@ -113,7 +114,7 @@ export default function SignInPage() {
 
   // Render a loading state while checking auth status
   if (authLoading || firebaseAuthUser) {
-    return <div className={styles.loadingContainer}>Loading...</div>;
+    return <LoadingSpinner fullScreen text="Authenticating..." size="medium" />;
   }
 
   return (

@@ -7,6 +7,9 @@ import { createContext, useContext, ReactNode } from "react";
 import { User as FirebaseAuthUser, AuthError } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
+// Component imports
+import { LoadingSpinner } from "@/components/loading";
+
 // Type imports
 import { AppUser } from "@/types/user";
 
@@ -49,9 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={authState}>
       {authState.loading ? (
-        <div>
-          <p>Loading...</p>
-        </div>
+        <LoadingSpinner
+          fullScreen
+          text="Initializing your session..."
+          size="large"
+        />
       ) : (
         children
       )}
