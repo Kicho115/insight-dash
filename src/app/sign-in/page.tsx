@@ -70,8 +70,13 @@ export default function SignInPage() {
   // Effect to handle redirection after successful authentication
   useEffect(() => {
     if (firebaseAuthUser && !authLoading) {
-      // User is authenticated, redirect to home
-      router.replace("/home");
+      // Small delay to ensure loading state is visible
+      const timeoutId = setTimeout(() => {
+        // User is authenticated, redirect to home
+        router.replace("/home");
+      }, 500); // 500ms delay to show the loading state
+
+      return () => clearTimeout(timeoutId);
     }
   }, [firebaseAuthUser, authLoading, router]);
 
@@ -84,18 +89,25 @@ export default function SignInPage() {
     setIsLoading(true);
     setError(null);
 
-    let result;
-    if (isSignUp) {
-      result = await signUpWithEmail({ email, password, name });
-    } else {
-      result = await signInWithEmail(email, password);
-    }
+    try {
+      let result;
+      if (isSignUp) {
+        result = await signUpWithEmail({ email, password, name });
+      } else {
+        result = await signInWithEmail(email, password);
+      }
 
-    if (result.error) {
-      setError(getFirebaseAuthErrorMessage(result.error));
+      if (result.error) {
+        setError(getFirebaseAuthErrorMessage(result.error));
+        setIsLoading(false);
+      }
+      // Don't set loading to false on success - let the redirect handle it
+      // This ensures the spinner stays visible until navigation completes
+    } catch (error) {
+      console.error("Unexpected error during email authentication:", error);
+      setError("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
     }
-    // On success, the useEffect hook will handle redirection.
-    setIsLoading(false);
   };
 
   /**
@@ -105,20 +117,40 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError(null);
-    const result = await signInWithGoogle();
-    if (result.error) {
-      setError(getFirebaseAuthErrorMessage(result.error));
+    
+    try {
+      const result = await signInWithGoogle();
+      if (result.error) {
+        setError(getFirebaseAuthErrorMessage(result.error));
+        setIsLoading(false);
+      }
+      // Don't set loading to false on success - let the redirect handle it
+      // This ensures the spinner stays visible until navigation completes
+    } catch (error) {
+      console.error("Unexpected error during Google sign in:", error);
+      setError("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   // Render a loading state while checking auth status
-  if (authLoading || firebaseAuthUser) {
+  if (authLoading) {
     return <LoadingSpinner fullScreen text="Authenticating..." size="medium" />;
   }
 
   return (
     <div className={styles.container}>
+      {/* Loading overlay for authentication processes */}
+      {isLoading && (
+        <div className={styles.loadingOverlay}>
+          <LoadingSpinner 
+            fullScreen 
+            text="Authenticating..." 
+            size="medium" 
+          />
+        </div>
+      )}
+      
       <div className={styles.card}>
         <h1 className={styles.title}>
           {isSignUp ? "Create Your Account" : "Welcome Back"}
@@ -136,6 +168,7 @@ export default function SignInPage() {
               onChange={(e) => setName(e.target.value)}
               required
               className={styles.input}
+              disabled={isLoading}
             />
           )}
           <input
@@ -145,6 +178,7 @@ export default function SignInPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className={styles.input}
+            disabled={isLoading}
           />
           <input
             type="password"
@@ -153,6 +187,7 @@ export default function SignInPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             className={styles.input}
+            disabled={isLoading}
           />
 
           {error && <p className={styles.error}>{error}</p>}
@@ -171,6 +206,7 @@ export default function SignInPage() {
             <button
               className={styles.forgotButton}
               onClick={() => setShowResetModal(true)}
+              disabled={isLoading}
             >
               Forgot your password?
             </button>
@@ -207,7 +243,7 @@ export default function SignInPage() {
             ></path>
             <path fill="none" d="M0 0h48v48H0z"></path>
           </svg>
-          Sign in with Google
+          {isLoading ? "Authenticating..." : "Sign in with Google"}
         </button>
 
         <p className={styles.toggleText}>
@@ -218,6 +254,7 @@ export default function SignInPage() {
               setError(null);
             }}
             className={styles.toggleButton}
+            disabled={isLoading}
           >
             {isSignUp ? "Sign In" : "Sign Up"}
           </button>
