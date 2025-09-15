@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import styles from "./styles.module.css";
 import { sendPasswordReset } from "@/services/firebase/auth";
+import { checkEmailExists } from "@/services/user";
 import { AuthError } from "firebase/auth";
 
 // Import an icon for the success message
@@ -48,6 +49,7 @@ export const PasswordResetModal = ({
   /**
    * @function handleSubmit
    * @description Handles the form submission to send the reset email.
+   * Includes a check to see if the email exists first.
    */
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -58,6 +60,16 @@ export const PasswordResetModal = ({
     setIsLoading(true);
     setError(null);
 
+    // Step 1: Securely check if the email is registered
+    const emailRegistered = await checkEmailExists(email);
+
+    if (!emailRegistered) {
+      setError("This email is not registered with an account.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Step 2: If it exists, proceed to send the reset email
     const result = await sendPasswordReset(email);
 
     setIsLoading(false);
