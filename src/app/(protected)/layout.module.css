@@ -6,6 +6,5 @@
 
 .content {
   flex-grow: 1; /* Takes up the remaining space */
-  padding: 24px 32px;
   overflow-y: auto; /* Allows content to scroll if it's too long */
 }
