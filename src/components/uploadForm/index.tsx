@@ -13,7 +13,6 @@ import {
 
 const ALLOWED_FILE_TYPES = [
   "text/csv",
-  "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ];
 
@@ -32,7 +31,7 @@ export const UploadForm = () => {
 
     if (selectedFile) {
       if (!ALLOWED_FILE_TYPES.includes(selectedFile.type)) {
-        setError("Error: Only .csv, .xls, or .xlsx files are allowed.");
+        setError("Error: Only .csv or .xlsx files are allowed.");
         setFile(null);
         return;
       }
