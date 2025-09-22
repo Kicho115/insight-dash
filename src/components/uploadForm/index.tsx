@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent,  useEffect } from "react";
 // Adjust the import to match the actual export from useFirebaseAuth
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { uploadFile } from "@/services/files";
@@ -9,6 +9,7 @@ import {
   IoCloudUploadOutline,
   IoCheckmarkCircle,
   IoWarning,
+  IoDocumentTextOutline
 } from "react-icons/io5";
 
 const ALLOWED_FILE_TYPES = [
@@ -19,14 +20,25 @@ const ALLOWED_FILE_TYPES = [
 export const UploadForm = () => {
   const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Effect to auto-populate the display name when a file is selected
+  useEffect(() => {
+    if (file) {
+      // Remove the file extension for a cleaner default alias
+      const nameWithoutExtension = file.name.split(".").slice(0, -1).join(".");
+      setDisplayName(nameWithoutExtension || file.name);
+    }
+  }, [file]);
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setError(null);
     setSuccess(null);
+    setDisplayName("");
     const selectedFile = e.target.files?.[0];
 
     if (selectedFile) {
@@ -45,6 +57,10 @@ export const UploadForm = () => {
       setError("Please select a file to upload.");
       return;
     }
+    if (!displayName.trim()) {
+      setError("Please provide a display name for the file.");
+      return;
+    }
     if (!user) {
       setError("You must be logged in to upload files.");
       return;
@@ -59,13 +75,16 @@ export const UploadForm = () => {
       file,
       user,
       isPublic,
+      displayName: displayName.trim(),
     });
 
     setIsLoading(false);
 
     if (result.success) {
-      setSuccess(`File "${file.name}" uploaded successfully!`);
+      setSuccess(`File "${displayName.trim()}" uploaded successfully!`);
       setFile(null);
+      setDisplayName("");
+      setIsPublic(false);
     } else {
       setError(
         `Upload failed: ${result.error?.message || "Please try again."}`
@@ -80,7 +99,8 @@ export const UploadForm = () => {
         Upload a CSV or Excel file for analysis.
       </p>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
+        {/* File Input Area */}
         <div className={styles.fileInputWrapper}>
           <IoCloudUploadOutline className={styles.uploadIcon} />
           <input
@@ -95,18 +115,46 @@ export const UploadForm = () => {
           </label>
         </div>
 
-        <div className={styles.toggleWrapper}>
-          <label className={styles.toggleLabel}>Make file public?</label>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
+        {/* Section for file details, appears with a smooth transition */}
+        <div
+          className={`${styles.detailsSection} ${
+            file ? styles.detailsVisible : ""
+          }`}
+        >
+          {/* Display Name Input */}
+          <div>
+            <label htmlFor="displayName" className={styles.inputLabel}>
+              Display Name
+            </label>
+            <div className={styles.inputWrapper}>
+              <IoDocumentTextOutline className={styles.inputIcon} />
+              <input
+                id="displayName"
+                type="text"
+                placeholder="e.g., Sells Report Q3"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className={styles.input}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Public/Private Toggle */}
+          <div className={styles.toggleWrapper}>
+            <label className={styles.toggleLabel}>Make file public?</label>
+            <label className={styles.switch}>
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+              />
+              <span className={styles.slider}></span>
+            </label>
+          </div>
         </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
           className={styles.submitButton}
@@ -116,6 +164,7 @@ export const UploadForm = () => {
         </button>
       </form>
 
+      {/* Status Messages */}
       {error && (
         <div className={`${styles.message} ${styles.error}`}>
           <IoWarning /> {error}

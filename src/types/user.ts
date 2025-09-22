@@ -24,6 +24,7 @@ export type FilePermission = {
 export type File = {
   id: string;
   name: string;
+  displayName: string;
   url: string;
   createdAt: Date;
   updatedAt: Date;

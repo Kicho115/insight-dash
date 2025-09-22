@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const user = await requireServerAuth();
 
     // 2. Validate the incoming request body
-    const { fileName, fileType, fileSize, isPublic } = await request.json();
+    const { fileName, fileType, fileSize, isPublic, displayName } = await request.json();
     if (!fileName || !fileType || !fileSize) {
       return NextResponse.json(
         { error: "Missing required file information." },
@@ -39,9 +39,10 @@ export async function POST(request: Request) {
     const metadata: Omit<AppFile, "createdAt" | "updatedAt" | "url"> = {
       id: fileId,
       name: fileName,
+      displayName: displayName || fileName,
       isPublic: isPublic,
       creatorId: user.uid,
-      permissions: [], // Start with no special permissions
+      permissions: [{ type: "user", id: user.uid, role: "admin" }],
       isLocked: false,
       // We will add size, type, and URL later or handle them differently
     };
