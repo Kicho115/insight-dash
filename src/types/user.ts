@@ -30,6 +30,7 @@ export type File = {
   updatedAt: Date;
   isPublic: boolean;
   creatorId: string;
+  path: string;
   size: number;
   permissions: FilePermission[]; // Who can access this file
   isLocked: boolean; // To prevent deletion while other users are using it

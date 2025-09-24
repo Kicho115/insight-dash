@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     const filePath = `files/${user.uid}/${fileId}/${fileName}`;
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
 
-    const metadata: Omit<FileMetadata, "createdAt" | "updatedAt" | "url"> = {
+    const metadata: Omit<FileMetadata, "createdAt" | "updatedAt" | "url" | "path"> = {
       id: fileId,
       name: fileName,
       displayName: displayName || fileName,
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
 
     const finalMetadata = {
       ...metadata,
+      path: filePath,
       url: "", // This is a placeholder; can be updated after upload if needed
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),

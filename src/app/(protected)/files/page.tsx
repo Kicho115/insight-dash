@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./styles.module.css";
 import { File as FileMetadata } from "@/types/user";
 import { useFiles } from "@/context/FilesProvider";
+import { ConfirmationModal } from "@/components/confirmationModal";
+import { deleteFile } from "@/services/files";
+import { useAuth } from "@/context/AuthProvider";
 import {
   IoDocumentTextOutline,
   IoLockClosedOutline,
   IoGlobeOutline,
   IoEllipsisHorizontal,
+  IoTrashOutline,
 } from "react-icons/io5";
 
 // Helper function to format file size into a human-readable string
@@ -32,7 +36,52 @@ const formatDate = (date: Date) => {
 
 export default function FilesPage() {
   // Get state directly from the context
-  const { files, isLoading, error } = useFiles();
+  const { files, isLoading, error, refetchFiles } = useFiles();
+  const { user } = useAuth();
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<FileMetadata | null>(null);
+  const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close action menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActiveActionMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleOpenDeleteModal = (file: FileMetadata) => {
+    setFileToDelete(file);
+    setActiveActionMenu(null);
+  };
+  
+  const handleConfirmDelete = async () => {
+    if (!fileToDelete) return;
+
+    setIsDeleting(true);
+    const result = await deleteFile(fileToDelete.id);
+    
+    if (result.success) {
+      refetchFiles(); // Refresh the list from context
+    } else {
+      // Rrror handling to show a user-friendly message
+      let errorMessage = "Failed to delete the file. Please try again.";
+      if (result.error?.message.includes("Forbidden")) {
+        errorMessage = "You do not have permission to delete this file.";
+      } else if (result.error?.message) {
+        errorMessage = result.error.message;
+      }
+      alert(errorMessage);
+    }
+
+    setIsDeleting(false);
+    setFileToDelete(null); // Close the modal
+  };
 
   if (isLoading) {
     return <div className={styles.loading}>Loading files...</div>;
@@ -92,9 +141,33 @@ export default function FilesPage() {
                     </span>
                   </td>
                   <td>
-                    <button className={styles.actionsButton}>
-                      <IoEllipsisHorizontal />
-                    </button>
+                    <div className={styles.actionsCell}>
+                      {user && user.id === file.creatorId && (
+                      <>
+                        <button
+                          className={styles.actionsButton}
+                          onClick={() =>
+                            setActiveActionMenu(
+                              activeActionMenu === file.id ? null : file.id
+                            )
+                          }
+                        >
+                        <IoEllipsisHorizontal />
+                      </button>
+                      {activeActionMenu === file.id && (
+                        <div className={styles.actionMenu} ref={menuRef}>
+                          <button
+                            className={styles.menuItem}
+                            onClick={() => handleOpenDeleteModal(file)}
+                          >
+                            <IoTrashOutline />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                      </>
+                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -102,6 +175,16 @@ export default function FilesPage() {
           </table>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={!!fileToDelete}
+        onClose={() => setFileToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete File"
+        message={`Are you sure you want to permanently delete "${fileToDelete?.displayName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

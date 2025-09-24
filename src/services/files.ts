@@ -98,3 +98,29 @@ export const getFilesForUser = async (): Promise<FileMetadata[]> => {
     throw error;
   }
 };
+
+/**
+ * @function deleteFile
+ * @description Calls the secure API route to delete a file.
+ * @param {string} fileId The ID of the file to delete.
+ * @returns {Promise<{ success: boolean; error?: Error }>} An object indicating the outcome.
+ */
+export const deleteFile = async (
+  fileId: string
+): Promise<{ success: boolean; error?: Error }> => {
+  try {
+    const response = await fetch(`/api/files/${fileId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to delete file.");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    return { success: false, error: error as Error };
+  }
+};
