@@ -1,7 +1,8 @@
 "use client";
 
 import styles from "./styles.module.css";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthProvider";
 import { signOutUser } from "@/services/firebase/auth";
 import {
@@ -11,6 +12,7 @@ import {
   IoCloudUpload,
   IoSettings,
   IoLogOutOutline,
+  IoHome,
 } from "react-icons/io5";
 
 interface SidebarProps {
@@ -25,6 +27,7 @@ interface SidebarProps {
 export const Sidebar = ({ onUploadClick }: SidebarProps) => {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname(); // Hook to get the current URL path
 
   const handleLogout = async () => {
     const { error } = await signOutUser();
@@ -35,6 +38,13 @@ export const Sidebar = ({ onUploadClick }: SidebarProps) => {
     }
   };
 
+  const menuItems = [
+    { name: "Home", icon: <IoHome />, path: "/home" },
+    { name: "Files", icon: <IoFolderOpen />, path: "/files" },
+    { name: "Team", icon: <IoPeople />, path: "/team" },
+    { name: "Settings", icon: <IoSettings />, path: "/settings" },
+  ];
+
   return (
     <nav className={styles.container}>
       <div>
@@ -44,14 +54,19 @@ export const Sidebar = ({ onUploadClick }: SidebarProps) => {
         </div>
 
         <hr className={styles.divider} />
-        <div className={styles.item}>
-          <IoFolderOpen />
-          <p>Files</p>
-        </div>
-        <div className={styles.item}>
-          <IoPeople />
-          <p>Team</p>
-        </div>
+        {menuItems.map((item) => (
+          <Link
+            href={item.path}
+            key={item.name}
+            // Apply 'active' class if the current path matches the item's path
+            className={`${styles.item} ${
+              pathname === item.path ? styles.active : ""
+            }`}
+          >
+            {item.icon}
+            <p>{item.name}</p>
+          </Link>
+        ))}
         <button
           onClick={onUploadClick}
           className={`${styles.item} ${styles.itemButton}`}
@@ -59,10 +74,6 @@ export const Sidebar = ({ onUploadClick }: SidebarProps) => {
           <IoCloudUpload />
           <p>Upload</p>
         </button>
-        <div className={styles.item}>
-          <IoSettings />
-          <p>Settings</p>
-        </div>
       </div>
 
       <div>

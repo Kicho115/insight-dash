@@ -6,11 +6,16 @@
 import { NextResponse } from "next/server";
 import { getStorage } from "firebase-admin/storage";
 import { v4 as uuidv4 } from "uuid";
+import { FieldValue } from "firebase-admin/firestore";
 
 // Local imports for server-side logic
 import { requireServerAuth } from "@/lib/serverAuth"; // Your teammate's secure auth checker
 import { dbAdmin } from "@/services/firebase/admin"; // Secure admin instance
-import { File as AppFile } from "@/types/user"; // Your file type definition
+import { File as FileMetadata } from "@/types/user"; // Your file type definition
+
+// Define the file size limit in megabytes
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 /**
  * @function POST
@@ -25,6 +30,15 @@ export async function POST(request: Request) {
 
     // 2. Validate the incoming request body
     const { fileName, fileType, fileSize, isPublic, displayName } = await request.json();
+
+    // Check the file size reported by the client.
+    if (fileSize > MAX_FILE_SIZE_BYTES) {
+      return NextResponse.json(
+        { error: `File size cannot exceed ${MAX_FILE_SIZE_MB}MB.` },
+        { status: 413 } // 413 Payload Too Large is the correct status code
+      );
+    }
+    
     if (!fileName || !fileType || !fileSize) {
       return NextResponse.json(
         { error: "Missing required file information." },
@@ -35,20 +49,29 @@ export async function POST(request: Request) {
     // 3. Prepare file metadata
     const fileId = uuidv4();
     const filePath = `files/${user.uid}/${fileId}/${fileName}`;
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
 
-    const metadata: Omit<AppFile, "createdAt" | "updatedAt" | "url"> = {
+    const metadata: Omit<FileMetadata, "createdAt" | "updatedAt" | "url" | "path"> = {
       id: fileId,
       name: fileName,
       displayName: displayName || fileName,
+      size: fileSize,
       isPublic: isPublic,
       creatorId: user.uid,
       permissions: [{ type: "user", id: user.uid, role: "admin" }],
       isLocked: false,
-      // We will add size, type, and URL later or handle them differently
+    };
+
+    const finalMetadata = {
+      ...metadata,
+      path: filePath,
+      url: "", // This is a placeholder; can be updated after upload if needed
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     // 4. Create the document in Firestore using the Admin SDK
-    await dbAdmin.collection("files").doc(fileId).set(metadata);
+    await fileDocRef.set(finalMetadata);
 
     // 5. Generate a Signed URL for the client to upload the file
     const bucket = getStorage().bucket(

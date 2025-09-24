@@ -2,7 +2,7 @@
  * @fileoverview Client-side service for file-related operations.
  */
 
-import { AppUser } from "@/types/user";
+import { AppUser, File as FileMetadata } from "@/types/user";
 
 interface UploadFileOptions {
   file: File;
@@ -66,6 +66,61 @@ export const uploadFile = async ({
     return { success: true };
   } catch (error) {
     console.error("Error during file upload process:", error);
+    return { success: false, error: error as Error };
+  }
+};
+
+/**
+ * @function getFilesForUser
+ * @description Fetches the list of files accessible to the current user from the secure API route.
+ * @returns {Promise<FileMetadata[]>} A promise that resolves to an array of file metadata.
+ */
+export const getFilesForUser = async (): Promise<FileMetadata[]> => {
+  try {
+    const response = await fetch("/api/files");
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch files.");
+    }
+
+    const filesData = await response.json();
+
+    // Convert date strings from the API back into Date objects for easier use in the component
+    return filesData.map((file: any) => ({
+      ...file,
+      createdAt: new Date(file.createdAt),
+      updatedAt: new Date(file.updatedAt),
+    }));
+  } catch (error) {
+    console.error("Error fetching files for user:", error);
+    // Re-throw the error to be handled by the UI component
+    throw error;
+  }
+};
+
+/**
+ * @function deleteFile
+ * @description Calls the secure API route to delete a file.
+ * @param {string} fileId The ID of the file to delete.
+ * @returns {Promise<{ success: boolean; error?: Error }>} An object indicating the outcome.
+ */
+export const deleteFile = async (
+  fileId: string
+): Promise<{ success: boolean; error?: Error }> => {
+  try {
+    const response = await fetch(`/api/files/${fileId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to delete file.");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting file:", error);
     return { success: false, error: error as Error };
   }
 };

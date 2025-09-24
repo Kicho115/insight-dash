@@ -67,3 +67,9 @@
   background-color: #ffe3e3; /* A reddish hover for destructive action */
   color: #d90429;
 }
+
+.active {
+  background-color: #e5e7eb;
+  color: #111827;
+  font-weight: 600;
+}
