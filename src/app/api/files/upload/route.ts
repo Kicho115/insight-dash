@@ -12,6 +12,10 @@ import { requireServerAuth } from "@/lib/serverAuth"; // Your teammate's secure 
 import { dbAdmin } from "@/services/firebase/admin"; // Secure admin instance
 import { File as AppFile } from "@/types/user"; // Your file type definition
 
+// Define the file size limit in megabytes
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 /**
  * @function POST
  * @description Handles a POST request to prepare a file upload.
@@ -25,6 +29,15 @@ export async function POST(request: Request) {
 
     // 2. Validate the incoming request body
     const { fileName, fileType, fileSize, isPublic, displayName } = await request.json();
+
+    // Check the file size reported by the client.
+    if (fileSize > MAX_FILE_SIZE_BYTES) {
+      return NextResponse.json(
+        { error: `File size cannot exceed ${MAX_FILE_SIZE_MB}MB.` },
+        { status: 413 } // 413 Payload Too Large is the correct status code
+      );
+    }
+    
     if (!fileName || !fileType || !fileSize) {
       return NextResponse.json(
         { error: "Missing required file information." },
@@ -40,6 +53,7 @@ export async function POST(request: Request) {
       id: fileId,
       name: fileName,
       displayName: displayName || fileName,
+      size: fileSize,
       isPublic: isPublic,
       creatorId: user.uid,
       permissions: [{ type: "user", id: user.uid, role: "admin" }],

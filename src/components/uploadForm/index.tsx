@@ -17,6 +17,9 @@ const ALLOWED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ];
 
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 export const UploadForm = () => {
   const { user } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
@@ -44,6 +47,12 @@ export const UploadForm = () => {
     if (selectedFile) {
       if (!ALLOWED_FILE_TYPES.includes(selectedFile.type)) {
         setError("Error: Only .csv or .xlsx files are allowed.");
+        setFile(null);
+        return;
+      }
+      // Check file size
+      if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+        setError(`Error: File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
         setFile(null);
         return;
       }
