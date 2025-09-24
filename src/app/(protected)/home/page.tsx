@@ -22,7 +22,7 @@ const HomePage = () => {
       } else if (hour >= 12 && hour < 19) {
         return "Good Afternoon";
       } else {
-        return "Good Night";
+        return "Good Evening";
       }
     };
 

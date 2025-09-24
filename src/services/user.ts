@@ -164,3 +164,34 @@ export const getUsersByIds = async (userIds: string[]): Promise<AppUser[]> => {
     return [];
   }
 };
+
+/**
+ * @function checkEmailExists
+ * @description Calls the secure API route to check if a user exists with the given email.
+ * @param {string} email The email address to check.
+ * @returns {Promise<boolean>} True if the email exists, false otherwise.
+ */
+export const checkEmailExists = async (email: string): Promise<boolean> => {
+  try {
+    const response = await fetch("/api/users/check-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      // If the API returns an error (e.g., 500), assume the check failed
+      console.error("API error checking email:", response.statusText);
+      return false;
+    }
+
+    const data = await response.json();
+    return data.exists === true;
+  } catch (error) {
+    console.error("Network error checking email:", error);
+    // On network failure, return false to prevent proceeding
+    return false;
+  }
+};

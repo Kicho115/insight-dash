@@ -24,11 +24,14 @@ export type FilePermission = {
 export type File = {
   id: string;
   name: string;
+  displayName: string;
   url: string;
   createdAt: Date;
   updatedAt: Date;
   isPublic: boolean;
   creatorId: string;
+  path: string;
+  size: number;
   permissions: FilePermission[]; // Who can access this file
   isLocked: boolean; // To prevent deletion while other users are using it
 };
