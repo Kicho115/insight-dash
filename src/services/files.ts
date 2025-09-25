@@ -84,10 +84,10 @@ export const getFilesForUser = async (): Promise<FileMetadata[]> => {
             throw new Error(errorData.error || "Failed to fetch files.");
         }
 
-        const filesData = await response.json();
+        const filesData: FileMetadata[] = await response.json();
 
         // Convert date strings from the API back into Date objects for easier use in the component
-        return filesData.map((file: any) => ({
+        return filesData.map((file) => ({
             ...file,
             createdAt: new Date(file.createdAt),
             updatedAt: new Date(file.updatedAt),

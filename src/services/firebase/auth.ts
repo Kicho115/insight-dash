@@ -8,7 +8,6 @@ import {
     updateProfile,
     sendPasswordResetEmail,
     type AuthError,
-    type User as FirebaseAuthUser,
 } from "firebase/auth";
 import { auth } from "./config";
 

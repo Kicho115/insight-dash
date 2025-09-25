@@ -49,6 +49,7 @@ export const FilesProvider = ({ children }: { children: ReactNode }) => {
             setFiles(userFiles);
         } catch (err) {
             setError("Failed to load files. Please try again later.");
+            console.error("Error fetching files:", err);
         } finally {
             setIsLoading(false);
         }

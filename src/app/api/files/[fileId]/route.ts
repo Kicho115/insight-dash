@@ -3,20 +3,17 @@ import { getStorage } from "firebase-admin/storage";
 import { dbAdmin } from "@/services/firebase/admin";
 import { requireServerAuth } from "@/lib/serverAuth";
 
-interface RouteParams {
-    params: {
-        fileId: string;
-    };
-}
-
 /**
  * @route GET /api/files/[fileId]
  * @description Fetches the metadata for a single file.
  */
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ fileId: string }> }
+) {
     try {
         // Access params before awaiting server functions
-        const fileId = params.fileId;
+        const fileId = (await params).fileId;
         const user = await requireServerAuth();
 
         const fileDoc = await dbAdmin.collection("files").doc(fileId).get();
@@ -47,9 +44,12 @@ export async function GET(request: Request, { params }: RouteParams) {
  * @route DELETE /api/files/[fileId]
  * @description Securely deletes a file from Storage and its metadata from Firestore.
  */
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+    _request: Request,
+    { params }: { params: Promise<{ fileId: string }> }
+) {
     try {
-        const fileId = params.fileId;
+        const fileId = (await params).fileId;
         const user = await requireServerAuth();
 
         if (!fileId) {

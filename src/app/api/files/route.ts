@@ -36,12 +36,22 @@ export async function GET() {
             const createdAt = data.createdAt.toDate().toISOString();
             const updatedAt = data.updatedAt.toDate().toISOString();
 
-            filesMap.set(doc.id, {
-                ...(data as any),
-                id: doc.id,
-                createdAt,
-                updatedAt,
-            });
+            // Ensure required fields are present and not undefined
+            if (
+                typeof data.name === "string" &&
+                typeof data.displayName === "string" &&
+                typeof data.url === "string" &&
+                typeof data.creatorId === "string" &&
+                typeof data.path === "string" &&
+                typeof data.size === "number"
+            ) {
+                filesMap.set(doc.id, {
+                    ...(data as FileMetadata),
+                    id: doc.id,
+                    createdAt,
+                    updatedAt,
+                });
+            }
         };
 
         // Add user's files and public files to the map, avoiding duplicates

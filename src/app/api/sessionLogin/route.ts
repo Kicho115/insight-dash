@@ -25,7 +25,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Verify the ID token
-        const decodedToken = await authAdmin.verifyIdToken(idToken);
+        // The session cookie itself is the primary goal.
+        try {
+            await authAdmin.verifyIdToken(idToken);
+        } catch (error) {
+            console.error("Failed to create session:", error);
+            return NextResponse.json(
+                { error: "Invalid ID token" },
+                { status: 401 }
+            );
+        }
 
         // Create session cookie (expires in 5 days)
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
