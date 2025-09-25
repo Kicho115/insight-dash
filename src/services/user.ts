@@ -13,31 +13,31 @@ import { AppUser } from "@/types/user";
  * @returns {Promise<void>} A promise that resolves when the user is saved.
  */
 export const saveNewUserToFirestore = async (user: FirebaseAuthUser) => {
-  try {
-    const userRef = doc(db, "users", user.uid);
+    try {
+        const userRef = doc(db, "users", user.uid);
 
-    const userSnap = await getDoc(userRef);
+        const userSnap = await getDoc(userRef);
 
-    // Map Firebase user to app user
-    const appUser: Partial<AppUser> = {
-      id: user.uid,
-      email: user.email ?? "",
-      name: user.displayName ?? "",
-      createdAt: new Date(),
-      teams: [],
-      position: "",
-    };
+        // Map Firebase user to app user
+        const appUser: Partial<AppUser> = {
+            id: user.uid,
+            email: user.email ?? "",
+            name: user.displayName ?? "",
+            createdAt: new Date(),
+            teams: [],
+            position: "",
+        };
 
-    // Check if the user is new
-    if (!userSnap.exists()) {
-      // Use merge: true to only set provided fields and avoid overwriting existing data
-      await setDoc(userRef, appUser, { merge: true });
+        // Check if the user is new
+        if (!userSnap.exists()) {
+            // Use merge: true to only set provided fields and avoid overwriting existing data
+            await setDoc(userRef, appUser, { merge: true });
+        }
+    } catch (error) {
+        console.error("Error saving new user to Firestore:", error);
+        // Re-throw the error to let the calling function handle it
+        throw error;
     }
-  } catch (error) {
-    console.error("Error saving new user to Firestore:", error);
-    // Re-throw the error to let the calling function handle it
-    throw error;
-  }
 };
 
 /**
@@ -48,18 +48,18 @@ export const saveNewUserToFirestore = async (user: FirebaseAuthUser) => {
  * @returns {Promise<void>} A promise that resolves when the user is updated.
  */
 export const updateUserInFirestore = async (
-  uid: string,
-  userData: Partial<AppUser>
+    uid: string,
+    userData: Partial<AppUser>
 ): Promise<void> => {
-  try {
-    const userRef = doc(db, "users", uid);
+    try {
+        const userRef = doc(db, "users", uid);
 
-    // Always use merge: true to avoid overwriting unspecified fields
-    await setDoc(userRef, userData, { merge: true });
-  } catch (error) {
-    console.error("Error updating user in Firestore:", error);
-    throw error;
-  }
+        // Always use merge: true to avoid overwriting unspecified fields
+        await setDoc(userRef, userData, { merge: true });
+    } catch (error) {
+        console.error("Error updating user in Firestore:", error);
+        throw error;
+    }
 };
 
 /**
@@ -69,18 +69,18 @@ export const updateUserInFirestore = async (
  * @returns {Promise<AppUser | null>} A promise that resolves to the user data or null if not found.
  */
 export const getUserFromFirestore = async (
-  uid: string
+    uid: string
 ): Promise<AppUser | null> => {
-  try {
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      return userSnap.data() as AppUser;
+    try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            return userSnap.data() as AppUser;
+        }
+    } catch (error) {
+        console.error("Error fetching user from Firestore:", error);
     }
-  } catch (error) {
-    console.error("Error fetching user from Firestore:", error);
-  }
-  return null;
+    return null;
 };
 
 /**
@@ -92,20 +92,20 @@ export const getUserFromFirestore = async (
  * @returns {import("firebase/firestore").Unsubscribe} A function to unsubscribe from the listener.
  */
 export const onUserProfileChange = (
-  uid: string,
-  callback: (user: AppUser | null) => void
+    uid: string,
+    callback: (user: AppUser | null) => void
 ) => {
-  const userDocRef = doc(db, "users", uid);
-  // Returns the unsubscribe function
-  return onSnapshot(userDocRef, (docSnap) => {
-    if (docSnap.exists()) {
-      // Document exists, pass the data to the callback
-      callback({ id: docSnap.id, ...docSnap.data() } as AppUser);
-    } else {
-      // Document does not exist (yet)
-      callback(null);
-    }
-  });
+    const userDocRef = doc(db, "users", uid);
+    // Returns the unsubscribe function
+    return onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            // Document exists, pass the data to the callback
+            callback({ id: docSnap.id, ...docSnap.data() } as AppUser);
+        } else {
+            // Document does not exist (yet)
+            callback(null);
+        }
+    });
 };
 
 /**
@@ -116,21 +116,21 @@ export const onUserProfileChange = (
  * @returns {Promise<AppUser | null>} The user data or null if not found.
  */
 export const getUserProfileOnce = async (
-  uid: string
+    uid: string
 ): Promise<AppUser | null> => {
-  try {
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
+    try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists()) {
-      return { id: userSnap.id, ...userSnap.data() } as AppUser;
+        if (userSnap.exists()) {
+            return { id: userSnap.id, ...userSnap.data() } as AppUser;
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
     }
-
-    return null;
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-    return null;
-  }
 };
 
 /**
@@ -140,29 +140,29 @@ export const getUserProfileOnce = async (
  * @returns {Promise<AppUser[]>} Array of users found.
  */
 export const getUsersByIds = async (userIds: string[]): Promise<AppUser[]> => {
-  try {
-    const users: AppUser[] = [];
+    try {
+        const users: AppUser[] = [];
 
-    // Fetch users in parallel
-    const userPromises = userIds.map(async (uid) => {
-      const user = await getUserProfileOnce(uid);
-      return user;
-    });
+        // Fetch users in parallel
+        const userPromises = userIds.map(async (uid) => {
+            const user = await getUserProfileOnce(uid);
+            return user;
+        });
 
-    const results = await Promise.all(userPromises);
+        const results = await Promise.all(userPromises);
 
-    // Filter out null results
-    results.forEach((user: AppUser | null) => {
-      if (user) {
-        users.push(user);
-      }
-    });
+        // Filter out null results
+        results.forEach((user: AppUser | null) => {
+            if (user) {
+                users.push(user);
+            }
+        });
 
-    return users;
-  } catch (error) {
-    console.error("Error fetching users by IDs:", error);
-    return [];
-  }
+        return users;
+    } catch (error) {
+        console.error("Error fetching users by IDs:", error);
+        return [];
+    }
 };
 
 /**
@@ -172,26 +172,26 @@ export const getUsersByIds = async (userIds: string[]): Promise<AppUser[]> => {
  * @returns {Promise<boolean>} True if the email exists, false otherwise.
  */
 export const checkEmailExists = async (email: string): Promise<boolean> => {
-  try {
-    const response = await fetch("/api/users/check-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+    try {
+        const response = await fetch("/api/users/check-email", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+        });
 
-    if (!response.ok) {
-      // If the API returns an error (e.g., 500), assume the check failed
-      console.error("API error checking email:", response.statusText);
-      return false;
+        if (!response.ok) {
+            // If the API returns an error (e.g., 500), assume the check failed
+            console.error("API error checking email:", response.statusText);
+            return false;
+        }
+
+        const data = await response.json();
+        return data.exists === true;
+    } catch (error) {
+        console.error("Network error checking email:", error);
+        // On network failure, return false to prevent proceeding
+        return false;
     }
-
-    const data = await response.json();
-    return data.exists === true;
-  } catch (error) {
-    console.error("Network error checking email:", error);
-    // On network failure, return false to prevent proceeding
-    return false;
-  }
 };

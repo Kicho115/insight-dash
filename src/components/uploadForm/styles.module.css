@@ -1,221 +1,222 @@
 .container {
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 32px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 32px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
 }
 
 .title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  text-align: center;
-  color: #1a202c;
-  margin-bottom: 8px;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    color: #1a202c;
+    margin-bottom: 8px;
 }
 
 .subtitle {
-  text-align: center;
-  color: #718096;
-  margin-bottom: 24px;
+    text-align: center;
+    color: #718096;
+    margin-bottom: 24px;
 }
 
 .fileInputWrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  border: 2px dashed #cbd5e0;
-  border-radius: 8px;
-  background-color: #f7fafc;
-  transition: border-color 0.2s, background-color 0.2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    background-color: #f7fafc;
+    transition: border-color 0.2s, background-color 0.2s;
 }
 
 .fileInputWrapper:hover {
-  border-color: #4299e1;
-  background-color: #ebf8ff;
+    border-color: #4299e1;
+    background-color: #ebf8ff;
 }
 
 .uploadIcon {
-  font-size: 3rem;
-  color: #a0aec0;
-  margin-bottom: 16px;
+    font-size: 3rem;
+    color: #a0aec0;
+    margin-bottom: 16px;
 }
 
 .fileInput {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
 }
 
 .fileInputLabel {
-  font-weight: 600;
-  color: #4a5568;
-  cursor: pointer;
+    font-weight: 600;
+    color: #4a5568;
+    cursor: pointer;
 }
 
 /* Styles for the details section that appears */
 .detailsSection {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out, margin-top 0.5s ease-in-out;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out,
+        margin-top 0.5s ease-in-out;
 }
 
 .detailsVisible {
-  max-height: 300px; /* Adjust as needed to fit content */
-  opacity: 1;
-  margin-top: 24px;
+    max-height: 300px; /* Adjust as needed to fit content */
+    opacity: 1;
+    margin-top: 24px;
 }
 
 .inputLabel {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #4a5568;
-  margin-bottom: 8px;
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 8px;
 }
 
 .inputWrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px; /* Space between input and next element */
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px; /* Space between input and next element */
 }
 
 .inputIcon {
-  position: absolute;
-  left: 12px;
-  color: #a0aec0;
-  font-size: 1.2rem;
+    position: absolute;
+    left: 12px;
+    color: #a0aec0;
+    font-size: 1.2rem;
 }
 
 .input {
-  width: 100%;
-  padding: 12px 12px 12px 40px; /* Left padding for icon */
-  border-radius: 8px;
-  border: 1px solid #cbd5e0;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background-color: #ffffff;
-  color: #1a202c;
+    width: 100%;
+    padding: 12px 12px 12px 40px; /* Left padding for icon */
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: #ffffff;
+    color: #1a202c;
 }
 
 .input:focus {
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
 }
 
 .toggleWrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  background-color: #f7fafc;
-  border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background-color: #f7fafc;
+    border-radius: 8px;
 }
 
 .toggleLabel {
-  font-weight: 500;
-  color: #4a5568;
+    font-weight: 500;
+    color: #4a5568;
 }
 
 /* The switch - the box around the slider */
 .switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 28px;
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
 }
 
 /* Hide default HTML checkbox */
 .switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 /* The slider */
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 28px;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 28px;
 }
 
 .slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
 }
 
 input:checked + .slider {
-  background-color: #4299e1;
+    background-color: #4299e1;
 }
 
 input:checked + .slider:before {
-  transform: translateX(22px);
+    transform: translateX(22px);
 }
 
 .submitButton {
-  width: 100%;
-  padding: 14px;
-  margin-top: 24px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-  background-color: #4299e1;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    width: 100%;
+    padding: 14px;
+    margin-top: 24px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    background-color: #4299e1;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .submitButton:hover {
-  background-color: #3182ce;
+    background-color: #3182ce;
 }
 
 .submitButton:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
+    background-color: #a0aec0;
+    cursor: not-allowed;
 }
 
 .message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 20px;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
 }
 
 .error {
-  background-color: #fff5f5;
-  color: #c53030;
-  border: 1px solid #fed7d7;
+    background-color: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
 }
 
 .success {
-  background-color: #f0fff4;
-  color: #2f855a;
-  border: 1px solid #c6f6d5;
+    background-color: #f0fff4;
+    color: #2f855a;
+    border: 1px solid #c6f6d5;
 }

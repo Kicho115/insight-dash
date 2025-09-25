@@ -9,9 +9,9 @@ import { IoClose } from "react-icons/io5";
  * @description Defines the props for the Modal component.
  */
 interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  children: ReactNode;
+    isOpen: boolean;
+    onClose: () => void;
+    children: ReactNode;
 }
 
 /**
@@ -21,18 +21,21 @@ interface ModalProps {
  * @returns {JSX.Element | null} The rendered modal or null if not open.
  */
 export const Modal = ({ isOpen, onClose, children }: ModalProps) => {
-  if (!isOpen) {
-    return null;
-  }
+    if (!isOpen) {
+        return null;
+    }
 
-  return (
-    <div className={styles.backdrop} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeButton} onClick={onClose}>
-          <IoClose />
-        </button>
-        {children}
-      </div>
-    </div>
-  );
+    return (
+        <div className={styles.backdrop} onClick={onClose}>
+            <div
+                className={styles.modalContent}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button className={styles.closeButton} onClick={onClose}>
+                    <IoClose />
+                </button>
+                {children}
+            </div>
+        </div>
+    );
 };
