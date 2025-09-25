@@ -14,13 +14,13 @@ import { LoadingSpinner } from "@/components/loading";
 import { AppUser } from "@/types/user";
 
 interface AuthContextType {
-  firebaseAuthUser: FirebaseAuthUser | null;
-  user: AppUser | null;
-  loading: boolean;
-  error: AuthError | null;
-  login: (idToken: string) => Promise<void>;
-  logout: () => Promise<void>;
-  clearError: () => void;
+    firebaseAuthUser: FirebaseAuthUser | null;
+    user: AppUser | null;
+    loading: boolean;
+    error: AuthError | null;
+    login: (idToken: string) => Promise<void>;
+    logout: () => Promise<void>;
+    clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,11 +32,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * @throws Will throw an error if used outside of AuthProvider
  */
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 };
 
 /**
@@ -47,19 +47,19 @@ export const useAuth = () => {
  * @returns {JSX.Element} The provider component
  */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const authState = useFirebaseAuth();
+    const authState = useFirebaseAuth();
 
-  return (
-    <AuthContext.Provider value={authState}>
-      {authState.loading ? (
-        <LoadingSpinner
-          fullScreen
-          text="Initializing your session..."
-          size="large"
-        />
-      ) : (
-        children
-      )}
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider value={authState}>
+            {authState.loading ? (
+                <LoadingSpinner
+                    fullScreen
+                    text="Initializing your session..."
+                    size="large"
+                />
+            ) : (
+                children
+            )}
+        </AuthContext.Provider>
+    );
 };

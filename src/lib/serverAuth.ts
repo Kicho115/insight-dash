@@ -5,9 +5,9 @@ import { cookies } from "next/headers";
 import { authAdmin } from "@/services/firebase/admin";
 
 export interface ServerAuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
+    uid: string;
+    email: string | null;
+    displayName: string | null;
 }
 
 /**
@@ -53,28 +53,28 @@ export interface ServerAuthUser {
  * ```
  */
 export async function getServerAuth(): Promise<ServerAuthUser | null> {
-  try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("session")?.value;
+    try {
+        const cookieStore = await cookies();
+        const sessionCookie = cookieStore.get("session")?.value;
 
-    if (!sessionCookie) {
-      return null;
+        if (!sessionCookie) {
+            return null;
+        }
+
+        const decodedToken = await authAdmin.verifySessionCookie(
+            sessionCookie,
+            true
+        );
+
+        return {
+            uid: decodedToken.uid,
+            email: decodedToken.email || null,
+            displayName: decodedToken.name || null,
+        };
+    } catch (error) {
+        console.error("Error verifying session:", error);
+        return null;
     }
-
-    const decodedToken = await authAdmin.verifySessionCookie(
-      sessionCookie,
-      true
-    );
-
-    return {
-      uid: decodedToken.uid,
-      email: decodedToken.email || null,
-      displayName: decodedToken.name || null,
-    };
-  } catch (error) {
-    console.error("Error verifying session:", error);
-    return null;
-  }
 }
 
 /**
@@ -124,11 +124,11 @@ export async function getServerAuth(): Promise<ServerAuthUser | null> {
  * ```
  */
 export async function requireServerAuth(): Promise<ServerAuthUser> {
-  const user = await getServerAuth();
+    const user = await getServerAuth();
 
-  if (!user) {
-    throw new Error("Authentication required");
-  }
+    if (!user) {
+        throw new Error("Authentication required");
+    }
 
-  return user;
+    return user;
 }

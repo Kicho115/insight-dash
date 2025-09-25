@@ -1,10 +1,10 @@
 .container {
-  display: flex;
-  height: 100vh;
-  background-color: #f1f5f9; /* A light background for the content area */
+    display: flex;
+    height: 100vh;
+    background-color: #f1f5f9; /* A light background for the content area */
 }
 
 .content {
-  flex-grow: 1; /* Takes up the remaining space */
-  overflow-y: auto; /* Allows content to scroll if it's too long */
+    flex-grow: 1; /* Takes up the remaining space */
+    overflow-y: auto; /* Allows content to scroll if it's too long */
 }

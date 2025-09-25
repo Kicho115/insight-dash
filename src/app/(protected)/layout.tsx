@@ -17,40 +17,40 @@ import { UploadForm } from "@/components/uploadForm";
  * @description A layout component that protects routes and provides the main app structure.
  */
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
-  const { user, loading } = useFirebaseAuth();
-  const router = useRouter();
+    const { user, loading } = useFirebaseAuth();
+    const router = useRouter();
 
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/sign-in");
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push("/sign-in");
+        }
+    }, [user, loading, router]);
+
+    if (loading || !user) {
+        return <div>Verifying session...</div>;
     }
-  }, [user, loading, router]);
 
-  if (loading || !user) {
-    return <div>Verifying session...</div>;
-  }
+    // Callback to close the modal upon successful upload
+    const handleUploadSuccess = () => {
+        setIsUploadModalOpen(false);
+    };
 
-  // Callback to close the modal upon successful upload
-  const handleUploadSuccess = () => {
-    setIsUploadModalOpen(false);
-  };
+    return (
+        <div className={styles.container}>
+            <FilesProvider>
+                <Sidebar onUploadClick={() => setIsUploadModalOpen(true)} />
 
-  return (
-    <div className={styles.container}>
-      <FilesProvider>
-        <Sidebar onUploadClick={() => setIsUploadModalOpen(true)} />
+                <main className={styles.content}>{children}</main>
 
-        <main className={styles.content}>{children}</main>
-
-        <Modal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-        >
-          <UploadForm onUploadSuccess={handleUploadSuccess} />
-        </Modal>
-      </FilesProvider>
-    </div>
-  );
+                <Modal
+                    isOpen={isUploadModalOpen}
+                    onClose={() => setIsUploadModalOpen(false)}
+                >
+                    <UploadForm onUploadSuccess={handleUploadSuccess} />
+                </Modal>
+            </FilesProvider>
+        </div>
+    );
 }
