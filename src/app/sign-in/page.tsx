@@ -16,9 +16,9 @@ import { LoadingSpinner } from "@/components/loading";
 // Context and Firebase imports
 import { useAuth } from "@/context/AuthProvider"; // Corrected hook name
 import {
-  signInWithGoogle,
-  signInWithEmail,
-  signUpWithEmail,
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
 } from "@/services/firebase/auth";
 import { AuthError } from "firebase/auth";
 
@@ -29,20 +29,20 @@ import { AuthError } from "firebase/auth";
  * @returns {string} A user-friendly error message.
  */
 const getFirebaseAuthErrorMessage = (error: AuthError): string => {
-  switch (error.code) {
-    case "auth/email-already-in-use":
-      return "This email is already registered. Please sign in.";
-    case "auth/invalid-email":
-      return "Please enter a valid email address.";
-    case "auth/user-not-found":
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-      return "Invalid email or password. Please try again.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters long.";
-    default:
-      return "An unexpected error occurred. Please try again.";
-  }
+    switch (error.code) {
+        case "auth/email-already-in-use":
+            return "This email is already registered. Please sign in.";
+        case "auth/invalid-email":
+            return "Please enter a valid email address.";
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+            return "Invalid email or password. Please try again.";
+        case "auth/weak-password":
+            return "Password should be at least 6 characters long.";
+        default:
+            return "An unexpected error occurred. Please try again.";
+    }
 };
 
 /**
@@ -50,223 +50,239 @@ const getFirebaseAuthErrorMessage = (error: AuthError): string => {
  * @description A page for user sign-in and registration.
  */
 export default function SignInPage() {
-  // Page state
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+    // Page state
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-  // Form fields state
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+    // Form fields state
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
 
-  // Controls visibility of the password reset request modal
-  const [showResetModal, setShowResetModal] = useState(false);
+    // Controls visibility of the password reset request modal
+    const [showResetModal, setShowResetModal] = useState(false);
 
-  // Auth context and router
-  const { firebaseAuthUser, loading: authLoading } = useAuth();
-  const router = useRouter();
+    // Auth context and router
+    const { firebaseAuthUser, loading: authLoading } = useAuth();
+    const router = useRouter();
 
-  // Effect to handle redirection after successful authentication
-  useEffect(() => {
-    if (firebaseAuthUser && !authLoading) {
-      // Small delay to ensure loading state is visible
-      const timeoutId = setTimeout(() => {
-        // User is authenticated, redirect to home
-        router.replace("/home");
-      }, 500); // 500ms delay to show the loading state
+    // Effect to handle redirection after successful authentication
+    useEffect(() => {
+        if (firebaseAuthUser && !authLoading) {
+            // Small delay to ensure loading state is visible
+            const timeoutId = setTimeout(() => {
+                // User is authenticated, redirect to home
+                router.replace("/home");
+            }, 500); // 500ms delay to show the loading state
 
-      return () => clearTimeout(timeoutId);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [firebaseAuthUser, authLoading, router]);
+
+    /**
+     * @function handleSubmit
+     * @description Handles the form submission for both sign-in and sign-up.
+     */
+    const handleSubmit = async (event: FormEvent) => {
+        event.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            let result;
+            if (isSignUp) {
+                result = await signUpWithEmail({ email, password, name });
+            } else {
+                result = await signInWithEmail(email, password);
+            }
+
+            if (result.error) {
+                setError(getFirebaseAuthErrorMessage(result.error));
+                setIsLoading(false);
+            }
+            // Don't set loading to false on success - let the redirect handle it
+            // This ensures the spinner stays visible until navigation completes
+        } catch (error) {
+            console.error(
+                "Unexpected error during email authentication:",
+                error
+            );
+            setError("An unexpected error occurred. Please try again.");
+            setIsLoading(false);
+        }
+    };
+
+    /**
+     * @function handleGoogleSignIn
+     * @description Handles the Google Sign-In button click.
+     */
+    const handleGoogleSignIn = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const result = await signInWithGoogle();
+            if (result.error) {
+                setError(getFirebaseAuthErrorMessage(result.error));
+                setIsLoading(false);
+            }
+            // Don't set loading to false on success - let the redirect handle it
+            // This ensures the spinner stays visible until navigation completes
+        } catch (error) {
+            console.error("Unexpected error during Google sign in:", error);
+            setError("An unexpected error occurred. Please try again.");
+            setIsLoading(false);
+        }
+    };
+
+    // Render a loading state while checking auth status
+    if (authLoading) {
+        return (
+            <LoadingSpinner fullScreen text="Authenticating..." size="medium" />
+        );
     }
-  }, [firebaseAuthUser, authLoading, router]);
 
-  /**
-   * @function handleSubmit
-   * @description Handles the form submission for both sign-in and sign-up.
-   */
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    return (
+        <div className={styles.container}>
+            {/* Loading overlay for authentication processes */}
+            {isLoading && (
+                <div className={styles.loadingOverlay}>
+                    <LoadingSpinner
+                        fullScreen
+                        text="Authenticating..."
+                        size="medium"
+                    />
+                </div>
+            )}
 
-    try {
-      let result;
-      if (isSignUp) {
-        result = await signUpWithEmail({ email, password, name });
-      } else {
-        result = await signInWithEmail(email, password);
-      }
+            <div className={styles.card}>
+                <h1 className={styles.title}>
+                    {isSignUp ? "Create Your Account" : "Welcome Back"}
+                </h1>
+                <p className={styles.subtitle}>
+                    {isSignUp
+                        ? "Get started with Insight-Dash"
+                        : "Sign in to continue"}
+                </p>
 
-      if (result.error) {
-        setError(getFirebaseAuthErrorMessage(result.error));
-        setIsLoading(false);
-      }
-      // Don't set loading to false on success - let the redirect handle it
-      // This ensures the spinner stays visible until navigation completes
-    } catch (error) {
-      console.error("Unexpected error during email authentication:", error);
-      setError("An unexpected error occurred. Please try again.");
-      setIsLoading(false);
-    }
-  };
+                <form onSubmit={handleSubmit} className={styles.form}>
+                    {isSignUp && (
+                        <input
+                            type="text"
+                            placeholder="Full Name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                            className={styles.input}
+                            disabled={isLoading}
+                        />
+                    )}
+                    <input
+                        type="email"
+                        placeholder="Email Address"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className={styles.input}
+                        disabled={isLoading}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className={styles.input}
+                        disabled={isLoading}
+                    />
 
-  /**
-   * @function handleGoogleSignIn
-   * @description Handles the Google Sign-In button click.
-   */
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await signInWithGoogle();
-      if (result.error) {
-        setError(getFirebaseAuthErrorMessage(result.error));
-        setIsLoading(false);
-      }
-      // Don't set loading to false on success - let the redirect handle it
-      // This ensures the spinner stays visible until navigation completes
-    } catch (error) {
-      console.error("Unexpected error during Google sign in:", error);
-      setError("An unexpected error occurred. Please try again.");
-      setIsLoading(false);
-    }
-  };
+                    {error && <p className={styles.error}>{error}</p>}
 
-  // Render a loading state while checking auth status
-  if (authLoading) {
-    return <LoadingSpinner fullScreen text="Authenticating..." size="medium" />;
-  }
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className={styles.submitButton}
+                    >
+                        {isLoading
+                            ? "Processing..."
+                            : isSignUp
+                            ? "Sign Up"
+                            : "Sign In"}
+                    </button>
+                </form>
 
-  return (
-    <div className={styles.container}>
-      {/* Loading overlay for authentication processes */}
-      {isLoading && (
-        <div className={styles.loadingOverlay}>
-          <LoadingSpinner 
-            fullScreen 
-            text="Authenticating..." 
-            size="medium" 
-          />
-        </div>
-      )}
-      
-      <div className={styles.card}>
-        <h1 className={styles.title}>
-          {isSignUp ? "Create Your Account" : "Welcome Back"}
-        </h1>
-        <p className={styles.subtitle}>
-          {isSignUp ? "Get started with Insight-Dash" : "Sign in to continue"}
-        </p>
+                {!isSignUp && (
+                    <div className={styles.forgotPasswordContainer}>
+                        <button
+                            className={styles.forgotButton}
+                            onClick={() => setShowResetModal(true)}
+                            disabled={isLoading}
+                        >
+                            Forgot your password?
+                        </button>
+                    </div>
+                )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {isSignUp && (
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className={styles.input}
-              disabled={isLoading}
-            />
-          )}
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className={styles.input}
-            disabled={isLoading}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className={styles.input}
-            disabled={isLoading}
-          />
+                <div className={styles.dividerContainer}>
+                    <div className={styles.dividerLine} />
+                    <span className={styles.dividerText}>OR</span>
+                    <div className={styles.dividerLine} />
+                </div>
 
-          {error && <p className={styles.error}>{error}</p>}
+                <button
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                    className={styles.googleButton}
+                >
+                    <svg className={styles.googleIcon} viewBox="0 0 48 48">
+                        <path
+                            fill="#EA4335"
+                            d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                        ></path>
+                        <path
+                            fill="#4285F4"
+                            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.53-4.18 7.13-10.12 7.13-17.65z"
+                        ></path>
+                        <path
+                            fill="#FBBC05"
+                            d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                        ></path>
+                        <path
+                            fill="#34A853"
+                            d="M24 48c6.48 0 11.93-2.13 15.89-5.82l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                        ></path>
+                        <path fill="none" d="M0 0h48v48H0z"></path>
+                    </svg>
+                    {isLoading ? "Authenticating..." : "Sign in with Google"}
+                </button>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={styles.submitButton}
-          >
-            {isLoading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
-          </button>
-        </form>
+                <p className={styles.toggleText}>
+                    {isSignUp
+                        ? "Already have an account?"
+                        : "Don't have an account?"}
+                    <button
+                        onClick={() => {
+                            setIsSignUp(!isSignUp);
+                            setError(null);
+                        }}
+                        className={styles.toggleButton}
+                        disabled={isLoading}
+                    >
+                        {isSignUp ? "Sign In" : "Sign Up"}
+                    </button>
+                </p>
+            </div>
 
-        {!isSignUp && (
-          <div className={styles.forgotPasswordContainer}>
-            <button
-              className={styles.forgotButton}
-              onClick={() => setShowResetModal(true)}
-              disabled={isLoading}
+            <Modal
+                isOpen={showResetModal}
+                onClose={() => setShowResetModal(false)}
             >
-              Forgot your password?
-            </button>
-          </div>
-        )}
-
-        <div className={styles.dividerContainer}>
-          <div className={styles.dividerLine} />
-          <span className={styles.dividerText}>OR</span>
-          <div className={styles.dividerLine} />
+                <PasswordResetModal
+                    onClose={() => setShowResetModal(false)}
+                    initialEmail={email}
+                />
+            </Modal>
         </div>
-
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={isLoading}
-          className={styles.googleButton}
-        >
-          <svg className={styles.googleIcon} viewBox="0 0 48 48">
-            <path
-              fill="#EA4335"
-              d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-            ></path>
-            <path
-              fill="#4285F4"
-              d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.53-4.18 7.13-10.12 7.13-17.65z"
-            ></path>
-            <path
-              fill="#FBBC05"
-              d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-            ></path>
-            <path
-              fill="#34A853"
-              d="M24 48c6.48 0 11.93-2.13 15.89-5.82l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-            ></path>
-            <path fill="none" d="M0 0h48v48H0z"></path>
-          </svg>
-          {isLoading ? "Authenticating..." : "Sign in with Google"}
-        </button>
-
-        <p className={styles.toggleText}>
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}
-          <button
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError(null);
-            }}
-            className={styles.toggleButton}
-            disabled={isLoading}
-          >
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </button>
-        </p>
-      </div>
-
-      <Modal isOpen={showResetModal} onClose={() => setShowResetModal(false)}>
-        <PasswordResetModal
-          onClose={() => setShowResetModal(false)}
-          initialEmail={email}
-        />
-      </Modal>
-    </div>
-  );
+    );
 }

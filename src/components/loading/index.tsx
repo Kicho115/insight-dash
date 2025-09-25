@@ -3,9 +3,9 @@
 import styles from "./styles.module.css";
 
 interface LoadingSpinnerProps {
-  size?: "small" | "medium" | "large";
-  text?: string;
-  fullScreen?: boolean;
+    size?: "small" | "medium" | "large";
+    text?: string;
+    fullScreen?: boolean;
 }
 
 /**
@@ -18,26 +18,26 @@ interface LoadingSpinnerProps {
  * @returns {JSX.Element} The loading spinner component
  */
 export const LoadingSpinner = ({
-  size = "medium",
-  text = "Loading...",
-  fullScreen = false,
+    size = "medium",
+    text = "Loading...",
+    fullScreen = false,
 }: LoadingSpinnerProps) => {
-  const containerClass = fullScreen
-    ? `${styles.container} ${styles.fullScreen}`
-    : styles.container;
+    const containerClass = fullScreen
+        ? `${styles.container} ${styles.fullScreen}`
+        : styles.container;
 
-  const spinnerClass = `${styles.spinner} ${styles[size]}`;
+    const spinnerClass = `${styles.spinner} ${styles[size]}`;
 
-  return (
-    <div className={containerClass}>
-      <div className={styles.content}>
-        <div className={spinnerClass}>
-          <div className={styles.ring}></div>
-          <div className={styles.ring}></div>
-          <div className={styles.ring}></div>
+    return (
+        <div className={containerClass}>
+            <div className={styles.content}>
+                <div className={spinnerClass}>
+                    <div className={styles.ring}></div>
+                    <div className={styles.ring}></div>
+                    <div className={styles.ring}></div>
+                </div>
+                {text && <p className={styles.text}>{text}</p>}
+            </div>
         </div>
-        {text && <p className={styles.text}>{text}</p>}
-      </div>
-    </div>
-  );
+    );
 };
