@@ -2,18 +2,11 @@
     {
         "origin": [
             "http://localhost:3000",
-            "https://insight-dash-git-leo-oscar-leonardos-projects.vercel.app"
+            "https://insight-dash-git-leo-oscar-leonardos-projects.vercel.app",
+            "https://insight-dash-olive.vercel.app"
         ],
-        "method": [
-            "GET",
-            "PUT",
-            "POST",
-            "DELETE"
-        ],
-        "responseHeader": [
-            "Content-Type",
-            "Authorization"
-        ],
+        "method": ["GET", "PUT", "POST", "DELETE"],
+        "responseHeader": ["Content-Type", "Authorization"],
         "maxAgeSeconds": 3600
     }
 ]
