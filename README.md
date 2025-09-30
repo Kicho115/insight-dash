@@ -15,6 +15,12 @@ Then, run the development server:
 pnpm dev
 ```
 
+or run this command if you want to use the genkit developer tools
+
+```bash
+pnpm run genkit:ui
+```
+
 Add the following environment variables:
 
 ```bash
