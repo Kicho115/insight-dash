@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dbAdmin } from "@/services/firebase/admin";
+import { doesEmailExist } from "@/data/users";
 
 /**
  * @route POST /api/users/check-email
@@ -17,22 +17,12 @@ export async function POST(request: Request) {
             );
         }
 
-        // Query the 'users' collection using the Admin SDK
-        const usersRef = dbAdmin.collection("users");
-        const snapshot = await usersRef
-            .where("email", "==", email)
-            .limit(1)
-            .get();
+        // Use our new Data Access Layer function
+        const exists = await doesEmailExist(email);
 
-        if (snapshot.empty) {
-            // No user found with this email
-            return NextResponse.json({ exists: false });
-        }
-
-        // User found
-        return NextResponse.json({ exists: true });
+        return NextResponse.json({ exists });
     } catch (error) {
-        console.error("Error checking email existence:", error);
+        console.error("Error in check-email route:", error);
         return NextResponse.json(
             { error: "An internal server error occurred." },
             { status: 500 }

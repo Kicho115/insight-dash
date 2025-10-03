@@ -4,6 +4,7 @@ import styles from "./styles.module.css";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthProvider";
+import { useUI } from "@/context/UIProvider";
 import { signOutUser } from "@/services/firebase/auth";
 import {
     IoPersonCircleSharp,
@@ -15,19 +16,16 @@ import {
     IoHome,
 } from "react-icons/io5";
 
-interface SidebarProps {
-    onUploadClick: () => void;
-}
-
 /**
  * @component Sidebar
  * @description The main navigation sidebar for the application.
  * @returns {JSX.Element} The rendered sidebar component.
  */
-export const Sidebar = ({ onUploadClick }: SidebarProps) => {
+export const Sidebar = () => {
     const { user } = useAuth();
+    const { openUploadModal } = useUI(); // Get the function from the context
     const router = useRouter();
-    const pathname = usePathname(); // Hook to get the current URL path
+    const pathname = usePathname();
 
     const handleLogout = async () => {
         const { error } = await signOutUser();
@@ -68,7 +66,7 @@ export const Sidebar = ({ onUploadClick }: SidebarProps) => {
                     </Link>
                 ))}
                 <button
-                    onClick={onUploadClick}
+                    onClick={openUploadModal} // Use the context function directly
                     className={`${styles.item} ${styles.itemButton}`}
                 >
                     <IoCloudUpload />

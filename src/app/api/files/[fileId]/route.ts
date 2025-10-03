@@ -1,40 +1,40 @@
 import { NextResponse } from "next/server";
-import { getStorage } from "firebase-admin/storage";
-import { dbAdmin } from "@/services/firebase/admin";
 import { requireServerAuth } from "@/lib/serverAuth";
+import { deleteFileById, getFileById } from "@/data/files";
 
 /**
  * @route GET /api/files/[fileId]
  * @description Fetches the metadata for a single file.
  */
 export async function GET(
-    request: Request,
+    _request: Request,
     { params }: { params: Promise<{ fileId: string }> }
 ) {
     try {
-        // Access params before awaiting server functions
-        const fileId = (await params).fileId;
         const user = await requireServerAuth();
+        const { fileId } = await params;
 
-        const fileDoc = await dbAdmin.collection("files").doc(fileId).get();
-        if (!fileDoc.exists) {
-            return NextResponse.json(
-                { error: "File not found" },
-                { status: 404 }
-            );
-        }
-
-        const fileData = fileDoc.data();
-        // Security check: ensure user has permission to view this file
-        if (fileData?.creatorId !== user.uid && !fileData?.isPublic) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        }
+        // Call the data access layer to handle all logic
+        const fileData = await getFileById(fileId, user.uid);
 
         return NextResponse.json(fileData);
     } catch (error) {
-        console.error("Error fetching single file:", error);
+        // Centralized error handling
+        const message = (error as Error).message;
+        if (message === "Authentication required") {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+        if (message === "File not found.") {
+            return NextResponse.json({ error: message }, { status: 404 });
+        }
+        if (message.includes("permission")) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: "Internal Server Error" },
             { status: 500 }
         );
     }
@@ -49,63 +49,29 @@ export async function DELETE(
     { params }: { params: Promise<{ fileId: string }> }
 ) {
     try {
-        const fileId = (await params).fileId;
         const user = await requireServerAuth();
+        const { fileId } = await params;
 
-        if (!fileId) {
-            return NextResponse.json(
-                { error: "File ID is required." },
-                { status: 400 }
-            );
-        }
+        await deleteFileById(fileId, user.uid);
 
-        const fileDocRef = dbAdmin.collection("files").doc(fileId);
-        const fileDoc = await fileDocRef.get();
-
-        if (!fileDoc.exists) {
-            return NextResponse.json(
-                { error: "File not found." },
-                { status: 404 }
-            );
-        }
-
-        const fileData = fileDoc.data();
-
-        // Security check: ensure the user deleting the file is the creator.
-        if (fileData?.creatorId !== user.uid) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        }
-
-        // Add a defensive check for the file path and provide the bucket name.
-        // This prevents the "A file name must be specified" error if the path is missing.
-        if (fileData && fileData.path && typeof fileData.path === "string") {
-            const bucket = getStorage().bucket(
-                process.env.FIREBASE_STORAGE_BUCKET
-            );
-            await bucket.file(fileData.path).delete();
-        } else {
-            // Log a warning if the file path is missing but proceed to delete metadata.
-            console.warn(
-                `File path not found for document ${fileId}. Deleting Firestore metadata only.`
-            );
-        }
-
-        await fileDocRef.delete();
-
-        return NextResponse.json({
-            success: true,
-            message: "File deleted successfully.",
-        });
+        return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Error deleting file:", error);
-        if ((error as Error).message === "Authentication required") {
+        // Manejo de errores centralizado
+        const message = (error as Error).message;
+        if (message === "Authentication required") {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
             );
         }
+        if (message === "File not found.") {
+            return NextResponse.json({ error: message }, { status: 404 });
+        }
+        if (message.includes("permission")) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: "Internal Server Error" },
             { status: 500 }
         );
     }
