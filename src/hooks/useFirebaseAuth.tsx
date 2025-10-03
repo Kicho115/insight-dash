@@ -17,12 +17,6 @@ interface AuthState {
     error: AuthError | null;
 }
 
-interface AuthActions {
-    login: (idToken: string) => Promise<void>;
-    logout: () => Promise<void>;
-    clearError: () => void;
-}
-
 /**
  * Custom hook for managing Firebase authentication state and user sessions.
  *

@@ -6,7 +6,8 @@ import { authAdmin } from "@/services/firebase/admin";
  * @route POST /api/sessionLogout
  * @description Clears the client-side session cookie and revokes the session on the Firebase server.
  */
-export async function POST(_request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function POST(request: NextRequest) {
     try {
         const cookieStore = cookies();
         const sessionCookie = (await cookieStore).get("session")?.value;
