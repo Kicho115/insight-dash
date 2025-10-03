@@ -21,10 +21,12 @@ if (!admin.apps.length) {
             serviceAccount as admin.ServiceAccount
         ),
         projectId: process.env.FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
 }
 
 export const authAdmin = admin.auth();
 export const dbAdmin = admin.firestore();
+export const storageAdmin = admin.storage();
 
 export default admin;
