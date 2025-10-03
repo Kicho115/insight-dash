@@ -16,7 +16,6 @@ export async function parseFile(filePath: string): Promise<string> {
 
         const data = await response.text();
         const headers = data.split("\n")[0].split(",");
-        console.log("File headers:", headers);
         return data;
     } catch (error) {
         console.error(
