@@ -6,13 +6,27 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     updateProfile,
-    sendPasswordResetEmail,
+    sendPasswordResetEmail as firebaseSendPasswordResetEmail,
     type AuthError,
 } from "firebase/auth";
 import { auth } from "./config";
 
-// Database imports
-import { saveNewUserToFirestore } from "../user";
+/**
+ * Creates a server-side session by sending the ID token to our API route.
+ * @param {string} idToken - The Firebase ID token of the authenticated user.
+ * @returns {Promise<{success: boolean}>}
+ */
+async function createServerSession(idToken: string) {
+    const response = await fetch("/api/sessionLogin", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idToken }),
+    });
+
+    return response.json();
+}
 
 /**
  * @function signInWithGoogle
@@ -22,20 +36,17 @@ import { saveNewUserToFirestore } from "../user";
 export async function signInWithGoogle() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
+
     try {
         const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+        const idToken = await result.user.getIdToken();
 
-        // Save user to Firestore, if they are new
-        await saveNewUserToFirestore(user);
+        // Create the server session after successful client-side login
+        await createServerSession(idToken);
 
-        return { user };
+        return { user: result.user };
     } catch (error: unknown) {
-        const credential = GoogleAuthProvider.credentialFromError(
-            error as AuthError
-        );
-        console.error("Error signing in with Google:", error);
-        return { error: error as AuthError, credential };
+        return { error: error as AuthError };
     }
 }
 
@@ -51,35 +62,21 @@ interface SignUpCredentials {
  * @param {SignUpCredentials} credentials - The user's registration details.
  * @returns {Promise<{ user?: FirebaseAuthUser, error?: AuthError }>} An object containing the new user or an error.
  */
-export async function signUpWithEmail({
-    email,
-    password,
-    name,
-}: SignUpCredentials) {
+export async function signUpWithEmail({ email, password, name }: any) {
     try {
         const result = await createUserWithEmailAndPassword(
             auth,
             email,
             password
         );
-        const user = result.user;
+        await updateProfile(result.user, { displayName: name });
+        const idToken = await result.user.getIdToken();
 
-        // Update Firebase Auth profile with the user's name
-        await updateProfile(user, { displayName: name });
+        // Create the server session
+        await createServerSession(idToken);
 
-        // Save the new user document to Firestore with extra details
-        try {
-            await saveNewUserToFirestore(user);
-        } catch (firestoreError) {
-            // Log the Firestore error but don't fail the entire signup process
-            console.error("Failed to save user to Firestore:", firestoreError);
-            // The auth user was created successfully, so we can still return the user
-            // The user profile listener will handle creating the document later
-        }
-
-        return { user };
+        return { user: result.user };
     } catch (error: unknown) {
-        console.error("Error signing up:", error);
         return { error: error as AuthError };
     }
 }
@@ -94,9 +91,13 @@ export async function signUpWithEmail({
 export async function signInWithEmail(email: string, password: string) {
     try {
         const result = await signInWithEmailAndPassword(auth, email, password);
+        const idToken = await result.user.getIdToken();
+
+        // Create the server session
+        await createServerSession(idToken);
+
         return { user: result.user };
     } catch (error: unknown) {
-        console.error("Error signing in:", error);
         return { error: error as AuthError };
     }
 }
@@ -107,13 +108,15 @@ export async function signInWithEmail(email: string, password: string) {
  * @returns {Promise<{ error: Error | null }>} An object containing an error if one occurred.
  */
 export const signOutUser = async () => {
-    let error: Error | null = null;
     try {
+        // Sign out from Firebase client
         await signOut(auth);
-    } catch (e) {
-        error = e as Error;
+        // Sign out from Next.js server session
+        await fetch("/api/sessionLogout", { method: "POST" });
+        return { success: true };
+    } catch (error: unknown) {
+        return { error: error as Error };
     }
-    return { error };
 };
 
 /**
@@ -122,14 +125,11 @@ export const signOutUser = async () => {
  * @param {string} email - The user's email address.
  * @returns {Promise<{ success: boolean; error?: AuthError }>} An object indicating the outcome.
  */
-export async function sendPasswordReset(
-    email: string
-): Promise<{ success: boolean; error?: AuthError }> {
+export async function sendPasswordReset(email: string) {
     try {
-        await sendPasswordResetEmail(auth, email);
+        await firebaseSendPasswordResetEmail(auth, email);
         return { success: true };
     } catch (error: unknown) {
-        console.error("Error sending password reset email:", error);
-        return { success: false, error: error as AuthError };
+        return { error: error as AuthError };
     }
 }

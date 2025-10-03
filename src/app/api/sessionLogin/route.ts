@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authAdmin } from "@/services/firebase/admin";
+import { createOrUpdateUser } from "@/data/users";
 
 export async function POST(request: NextRequest) {
-    // Add CORS headers for better compatibility
-    const corsHeaders = {
-        "Access-Control-Allow-Origin":
-            process.env.NODE_ENV === "production"
-                ? "https://your-domain.com"
-                : "http://localhost:3000",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
-        "Cross-Origin-Embedder-Policy": "unsafe-none",
-    };
-
     try {
         const { idToken } = await request.json();
 
@@ -24,31 +13,21 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verify the ID token
-        // The session cookie itself is the primary goal.
-        try {
-            await authAdmin.verifyIdToken(idToken);
-        } catch (error) {
-            console.error("Failed to create session:", error);
-            return NextResponse.json(
-                { error: "Invalid ID token" },
-                { status: 401 }
-            );
-        }
+        // Verify the ID token to get user details
+        const decodedToken = await authAdmin.verifyIdToken(idToken);
 
-        // Create session cookie (expires in 5 days)
+        // Create the user profile in Firestore from the server
+        await createOrUpdateUser(decodedToken.uid, {
+            email: decodedToken.email || "",
+            name: decodedToken.name || "",
+        });
+
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const sessionCookie = await authAdmin.createSessionCookie(idToken, {
             expiresIn,
         });
 
-        // Create response with CORS headers
-        const response = NextResponse.json(
-            { message: "Session created successfully" },
-            { status: 200, headers: corsHeaders }
-        );
-
-        // Set secure cookie
+        const response = NextResponse.json({ success: true });
         response.cookies.set("session", sessionCookie, {
             maxAge: expiresIn,
             httpOnly: true,
@@ -62,7 +41,7 @@ export async function POST(request: NextRequest) {
         console.error("Error creating session cookie:", error);
         return NextResponse.json(
             { error: "Internal server error" },
-            { status: 500, headers: corsHeaders }
+            { status: 500 }
         );
     }
 }
