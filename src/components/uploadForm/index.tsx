@@ -3,8 +3,8 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 // Adjust the import to match the actual export from useFirebaseAuth
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { useRouter } from "next/navigation";
 import { uploadFile } from "@/services/files";
-import { useFiles } from "@/context/FilesProvider";
 import styles from "./styles.module.css";
 import {
     IoCloudUploadOutline,
@@ -22,12 +22,12 @@ const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface UploadFormProps {
-    onUploadSuccess: () => void; // Callback to close the modal
+    onUploadSuccess: () => void;
 }
 
 export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
+    const router = useRouter();
     const { user } = useFirebaseAuth();
-    const { refetchFiles } = useFiles(); // Get the refetch function from context
 
     const [file, setFile] = useState<File | null>(null);
     const [displayName, setDisplayName] = useState("");
@@ -102,15 +102,14 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
         setIsLoading(false);
 
         if (result.success) {
-            setSuccess(`File "${displayName.trim()}" uploaded successfully!`);
-            refetchFiles();
-            setFile(null);
-            setDisplayName("");
-            setIsPublic(false);
+            setSuccess(`Success! "${displayName.trim()}" has been uploaded.`);
+            router.refresh();
 
-            // Wait a moment for the user to see the success message before closing
             setTimeout(() => {
-                onUploadSuccess();
+                onUploadSuccess(); // Call the function passed from the layout to close the modal
+                // Reset form for the next time it opens
+                setFile(null);
+                setSuccess(null);
             }, 1500);
         } else {
             setError(
