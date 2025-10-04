@@ -23,7 +23,7 @@ import styles from "./styles.module.css";
 export default async function FilePage({
     params,
 }: {
-    params: { fileId: string };
+    params: Promise<{ fileId: string }>;
 }) {
     const user = await requireServerAuth();
     const { fileId } = await params;

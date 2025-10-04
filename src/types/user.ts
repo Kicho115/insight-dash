@@ -36,4 +36,5 @@ export type File = {
     isLocked: boolean; // To prevent deletion while other users are using it
     status?: "Processing" | "Ready" | "Not ready"; // Processing status: 'processing', 'ready', 'error'
     summary?: string; // File has summary after processing
+    headers?: string[]; // Column headers after processing
 };

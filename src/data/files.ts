@@ -27,7 +27,11 @@ export async function prepareFileUpload({
     isPublic,
     displayName,
     user,
-}: PrepareUploadOptions): Promise<{ signedUrl: string; fileId: string }> {
+}: PrepareUploadOptions): Promise<{
+    signedUrl: string;
+    fileId: string;
+    filePath: string;
+}> {
     const fileId = uuidv4();
     const filePath = `files/${user.uid}/${fileId}/${fileName}`;
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
@@ -61,7 +65,7 @@ export async function prepareFileUpload({
     };
     const [signedUrl] = await file.getSignedUrl(options);
 
-    return { signedUrl, fileId };
+    return { signedUrl, fileId, filePath };
 }
 
 /**
@@ -160,4 +164,54 @@ export async function getFileById(
     }
 
     return fileData;
+}
+
+/**
+ * Updates the summary and headers of a file after processing.
+ * @param fileId - The ID of the file to update.
+ * @param summary - The generated summary of the file.
+ * @param headers - The column headers extracted from the file.
+ * @param status - The processing status of the file.
+ */
+export async function updateFileMetadata(
+    fileId: string,
+    {
+        summary,
+        headers,
+        status,
+    }: {
+        summary?: string;
+        headers?: string[];
+        status?: "Processing" | "Ready" | "Not ready";
+    }
+): Promise<void> {
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+    const fileDoc = await fileDocRef.get();
+
+    if (!fileDoc.exists) {
+        throw new Error("File not found.");
+    }
+
+    const updateData: {
+        summary?: string;
+        headers?: string[];
+        status?: "Processing" | "Ready" | "Not ready";
+        updatedAt: FirebaseFirestore.FieldValue;
+    } = {
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (summary !== undefined) {
+        updateData.summary = summary;
+    }
+
+    if (headers !== undefined) {
+        updateData.headers = headers;
+    }
+
+    if (status !== undefined) {
+        updateData.status = status;
+    }
+
+    await fileDocRef.update(updateData);
 }

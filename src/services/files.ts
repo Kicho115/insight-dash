@@ -13,7 +13,7 @@ interface UploadFileOptions {
 
 /**
  * @function uploadFile
- * @description Securely uploads a file by making a request to our backend API.
+ * @description Securely uploads a file by making a request to our backend API. Calls the AI flow to generate a summary and stores it in firebase.
  * @param {UploadFileOptions} options - The file details and the user.
  * @returns {Promise<{ success: boolean; error?: Error }>} The outcome of the upload.
  */
@@ -48,7 +48,7 @@ export const uploadFile = async ({
             throw new Error(errorData.error || "Failed to prepare upload.");
         }
 
-        const { signedUrl } = await response.json();
+        const { signedUrl, filePath, fileId } = await response.json();
 
         // Step 2: Use the signed URL to upload the file directly to Google Cloud Storage
         const uploadResponse = await fetch(signedUrl, {
@@ -61,6 +61,23 @@ export const uploadFile = async ({
 
         if (!uploadResponse.ok) {
             throw new Error("File upload to storage failed.");
+        }
+
+        // Step 3: Process the file on the server (extract headers and generate summary)
+        const processResponse = await fetch(`/api/files/${fileId}/process`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                filePath,
+                fileName: displayName || file.name,
+            }),
+        });
+
+        if (!processResponse.ok) {
+            console.error("File processing failed, but upload succeeded.");
+            // The file is uploaded but not processed
         }
 
         return { success: true };
