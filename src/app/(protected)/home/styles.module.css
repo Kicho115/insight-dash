@@ -1,6 +1,5 @@
 .container {
     background-color: #c7bfa7;
-    width: calc(100vw - var(--sidebar-width));
     height: 100vh;
     display: flex;
     justify-content: center;
