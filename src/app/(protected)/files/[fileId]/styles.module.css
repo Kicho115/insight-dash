@@ -1,0 +1,46 @@
+.container {
+    padding: 0 5vw;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.headerText {
+    color: #737373;
+}
+
+.fileIcon {
+    background-color: antiquewhite;
+    padding: 0.5rem;
+    border-radius: 16px;
+}
+
+.excel {
+    color: #217346;
+    background-color: #e6f4ea;
+    box-shadow: 0 0 5px rgba(33, 115, 70, 0.5);
+}
+
+.csv {
+    color: #207398;
+    background-color: #e6f0f4;
+    box-shadow: 0 0 5px rgba(32, 115, 152, 0.5);
+}
+
+.subtitle {
+    color: #737373;
+}
+
+.summaryText {
+    color: oklch(0.145 0 0);
+}

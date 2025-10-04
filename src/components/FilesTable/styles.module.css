@@ -164,3 +164,7 @@
     color: #6b7280;
     margin-top: 0.5rem;
 }
+
+.tableRow {
+    cursor: pointer;
+}

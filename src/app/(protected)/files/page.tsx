@@ -20,7 +20,6 @@ export default async function FilesPage() {
                 </div>
                 <AddFileButton />
             </header>
-
             {/* Pass the server-fetched data as a prop to the client component */}
             <FilesTable initialFiles={initialFiles} />
         </div>

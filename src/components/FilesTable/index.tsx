@@ -96,6 +96,10 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
         setFileToDelete(null);
     };
 
+    const handleFileClick = (fileId: string) => {
+        router.push(`/files/${fileId}`);
+    };
+
     if (files.length === 0) {
         return (
             <div className={styles.emptyState}>
@@ -122,7 +126,11 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                     </thead>
                     <tbody>
                         {files.map((file) => (
-                            <tr key={file.id}>
+                            <tr
+                                key={file.id}
+                                onClick={() => handleFileClick(file.id)}
+                                className={styles.tableRow}
+                            >
                                 <td>
                                     <div className={styles.fileNameCell}>
                                         <IoDocumentTextOutline
@@ -158,14 +166,15 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                                                     className={
                                                         styles.actionsButton
                                                     }
-                                                    onClick={() =>
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent fileRow click
                                                         setActiveActionMenu(
                                                             activeActionMenu ===
                                                                 file.id
                                                                 ? null
                                                                 : file.id
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                 >
                                                     <IoEllipsisHorizontal />
                                                 </button>
