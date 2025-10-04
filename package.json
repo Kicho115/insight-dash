@@ -7,7 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "genkit:ui": "genkit start -- pnpm next dev"
+        "genkit": "genkit start -- pnpm next dev"
     },
     "dependencies": {
         "@genkit-ai/google-genai": "^1.20.0",
