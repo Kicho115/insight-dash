@@ -1,0 +1,71 @@
+.container {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.iconWrapper {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    background-color: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    font-size: 1.75rem;
+    color: #ef4444;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.message {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cancelButton {
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: #f9fafb;
+}
+
+.confirmButton {
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+.confirmButton:hover:not(:disabled) {
+    background-color: #dc2626;
+}
