@@ -6,6 +6,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1rem;
     padding: 1rem 1.5rem;
 }
 
@@ -23,6 +24,10 @@
     background-color: antiquewhite;
     padding: 0.5rem;
     border-radius: 16px;
+    & svg {
+        height: 40px;
+        width: auto;
+    }
 }
 
 .excel {
@@ -55,4 +60,35 @@
     border-radius: 16px;
     margin-top: 1rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media screen and (max-width: 600px) {
+    .header {
+        overflow: hidden;
+    }
+
+    .headerNames {
+        font-size: 0.85rem;
+    }
+
+    .fileIcon {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 472px) {
+    .headerNames {
+        font-size: 0.55rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .summary,
+    .metadata {
+        & p {
+            font-size: 0.75rem;
+        }
+    }
 }
