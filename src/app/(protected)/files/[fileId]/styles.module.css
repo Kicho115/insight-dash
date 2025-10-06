@@ -38,9 +38,21 @@
 }
 
 .subtitle {
-    color: #737373;
+    color: black;
+    margin: 0.5rem 0;
 }
 
-.summaryText {
-    color: oklch(0.145 0 0);
+.summaryText,
+.metadata > p {
+    color: #4f4f4f;
+}
+
+.summary,
+.metadata,
+.header {
+    padding: 1rem 1.5rem;
+    background-color: #f9f9f9;
+    border-radius: 16px;
+    margin-top: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
