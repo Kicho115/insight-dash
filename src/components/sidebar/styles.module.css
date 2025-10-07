@@ -1,36 +1,222 @@
 .container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 240px;
-  height: 100dvh;
-  background-color: #f0f0f0;
-  padding: 2rem;
-  color: #000000;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes logout to the bottom */
+    width: var(--sidebar-width);
+    height: 100dvh;
+    background-color: #f8f9fa; /* A light, modern grey */
+    padding: 1rem;
+    color: #343a40; /* Dark grey for text */
+    border-right: 1px solid #dee2e6; /* Subtle border */
+    position: relative;
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
 }
 
-.user,
-.item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  border-radius: 16px;
+/* Collapsed state - shows only icons */
+.container.collapsed {
+    width: 80px;
+    padding: 1rem 0.5rem;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .container {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        transform: translateX(0);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .container.collapsed {
+        transform: translateX(-100%);
+        width: 280px; /* Keep full width on mobile when hidden */
+    }
+}
+
+/* Overlay for mobile */
+.overlay {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+}
+
+/* Toggle button */
+.toggleButton {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #495057;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+    z-index: 10;
+}
+
+.toggleButton:hover {
+    background-color: #e9ecef;
+}
+
+/* When collapsed on desktop, center the button and make it more prominent */
+.collapsed .toggleButton {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #f8f9fa;
+}
+
+/* Mobile hamburger button that appears when sidebar is closed */
+.mobileToggleButton {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .toggleButton {
+        /* Hide the button inside nav on mobile - use mobileToggleButton instead */
+        display: none;
+    }
+
+    /* Show hamburger button outside sidebar when closed on mobile */
+    .mobileToggleButton {
+        display: flex;
+        position: fixed;
+        left: 1rem;
+        bottom: 1rem;
+        background-color: #f8f9fa;
+        border: none;
+        color: #495057;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1001;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .mobileToggleButton:hover {
+        background-color: #e9ecef;
+    }
 }
 
 .user {
-  font-size: 1.5rem;
-  & svg {
-    height: auto;
-    width: 50px;
-  }
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    margin-top: 2rem; /* Space for toggle button */
 }
 
-.item {
-  cursor: pointer;
-  padding: 1rem;
+.collapsed .user {
+    justify-content: center;
+    padding: 0.5rem 0;
+}
 
-  &:hover {
-    background-color: #e0e0e0;
-  }
+.collapsed .user p {
+    display: none;
+}
+
+.logo {
+    font-size: 2.5rem;
+    color: #495057;
+    flex-shrink: 0;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 1rem 0;
+}
+
+.collapsed .divider {
+    margin: 1rem 0.5rem;
+}
+
+/* Base styles for all clickable items */
+.item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    width: 100%;
+    text-align: left;
+}
+
+.collapsed .item {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+    gap: 0;
+}
+
+.collapsed .item p {
+    display: none;
+}
+
+.item > svg {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Specific styles to reset button defaults and make them look like divs */
+.itemButton {
+    background: none;
+    border: none;
+    color: inherit; /* Inherit text color from .container */
+    font-family: inherit; /* Inherit font from the parent */
+    cursor: pointer;
+}
+
+/* Hover effect for ALL items (divs and buttons) */
+.item:hover {
+    background-color: #e9ecef;
+}
+
+/* Specific hover effect for the logout button */
+.logoutButton:hover {
+    background-color: #ffe3e3; /* A reddish hover for destructive action */
+    color: #d90429;
+}
+
+.active {
+    background-color: #e5e7eb;
+    color: #111827;
+    font-weight: 600;
 }

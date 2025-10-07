@@ -1,29 +1,27 @@
 import { NextResponse } from "next/server";
-// ✅ corrige el import al path real:
 import { askAI } from "@/services/genkit/askAi";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Tu flow de Genkit (askAI) en /services/genkit/askAi.ts
-    // En tu askAi.ts el input esperado es { question: string }.
-    const question =
-      body?.question ??
-      (Array.isArray(body?.messages)
-        ? body.messages.map((m: any) => m.content).join("\n\n")
-        : "");
+    // Soporta { messages, fileIds } y, si viene sólo question, lo adaptamos
+    const messages = Array.isArray(body?.messages)
+      ? body.messages
+      : body?.question
+        ? [{ role: "user", content: String(body.question) }]
+        : [];
 
-    if (!question || typeof question !== "string") {
+    const fileIds = Array.isArray(body?.fileIds) ? body.fileIds : [];
+
+    if (!messages.length) {
       return NextResponse.json(
-        { success: false, error: "Falta 'question' (string)." },
+        { success: false, error: "Faltan 'messages' (historial) o 'question'." },
         { status: 400 }
       );
     }
 
-    // Llama tu flow interno
-    const data = await askAI({ question });
-
+    const data = await askAI({ messages, fileIds }); // <- lo implementamos abajo
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
     console.error("AI route error:", err);
