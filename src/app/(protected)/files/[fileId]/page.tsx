@@ -41,11 +41,11 @@ export default async function FilePage({
                 <div className={styles.headerLeft}>
                     {fileExtension === "xlsx" ? (
                         <div className={`${styles.fileIcon} ${styles.excel}`}>
-                            <BsFiletypeXlsx size={40} />
+                            <BsFiletypeXlsx />
                         </div>
                     ) : (
                         <div className={`${styles.fileIcon} ${styles.csv}`}>
-                            <BsFiletypeCsv size={40} />
+                            <BsFiletypeCsv />
                         </div>
                     )}
                     <div className={styles.headerNames}>
