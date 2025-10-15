@@ -24,7 +24,16 @@ export async function signInWithGoogle() {
         // NO need to create session here. The hook will detect the auth change.
         return { user: result.user };
     } catch (error: unknown) {
-        return { error: error as AuthError };
+        const authError = error as AuthError;
+
+        // This is not a "failure", but a cancellation.
+        if (authError.code === "auth/popup-closed-by-user") {
+            // Return a specific flag to signify cancellation without an error message.
+            return { cancelled: true };
+        }
+
+        // For all other errors, return them to be displayed.
+        return { error: authError };
     }
 }
 
@@ -51,6 +60,7 @@ export async function signUpWithEmail({
             email,
             password
         );
+        console.log("Name:", name);
         await updateProfile(result.user, { displayName: name });
         return { user: result.user };
     } catch (error: unknown) {
