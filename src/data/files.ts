@@ -146,25 +146,46 @@ export async function deleteFileById(
  * @throws Will throw an error if the file is not found or the user lacks permission.
  */
 export async function getFileById(
-    fileId: string,
-    userId: string
+  fileId: string,
+  userId: string
 ): Promise<FileMetadata> {
-    const fileDoc = await dbAdmin.collection("files").doc(fileId).get();
-    if (!fileDoc.exists) {
-        throw new Error("File not found.");
+  const fileDoc = await dbAdmin.collection("files").doc(fileId).get();
+  if (!fileDoc.exists) {
+    throw new Error("File not found.");
+  }
+
+  const data = fileDoc.data() as any;
+
+  // Permisos
+  const hasPermission = data.isPublic || data.creatorId === userId;
+  if (!hasPermission) {
+    throw new Error("User does not have permission to view this file.");
+  }
+
+  // Normaliza Timestamp -> Date
+  const toDateSafe = (v: any): Date => {
+    if (!v) return new Date();
+    if (v instanceof Date) return v;
+    if (typeof v?.toDate === "function") return v.toDate(); // Firestore Timestamp
+    if (typeof v?._seconds === "number") {
+      const ms = v._seconds * 1000 + Math.floor((v._nanoseconds || 0) / 1e6);
+      return new Date(ms);
     }
+    // Si llega string/number, intenta parsear
+    return new Date(v);
+  };
 
-    const fileData = fileDoc.data() as FileMetadata;
+  const file: FileMetadata = {
+    ...(data as Partial<FileMetadata>),
+    id: fileDoc.id,
+    createdAt: toDateSafe(data.createdAt),
+    updatedAt: toDateSafe(data.updatedAt),
+  } as FileMetadata;
 
-    // Security check: Allow access if the file is public or the user is the creator.
-    const hasPermission = fileData.isPublic || fileData.creatorId === userId;
-
-    if (!hasPermission) {
-        throw new Error("User does not have permission to view this file.");
-    }
-
-    return fileData;
+  // IMPORTANTE: no devuelvas Timestamp ni FieldValue
+  return file;
 }
+
 
 /**
  * Updates the summary and headers of a file after processing.
