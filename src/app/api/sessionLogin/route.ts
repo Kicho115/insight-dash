@@ -16,10 +16,12 @@ export async function POST(request: NextRequest) {
         // Verify the ID token to get user details
         const decodedToken = await authAdmin.verifyIdToken(idToken);
 
+        const userRecord = await authAdmin.getUser(decodedToken.uid);
+
         // Create the user profile in Firestore from the server
-        await createOrUpdateUser(decodedToken.uid, {
-            email: decodedToken.email || "",
-            name: decodedToken.name || "",
+        await createOrUpdateUser(userRecord.uid, {
+            email: userRecord.email || "",
+            name: userRecord.displayName || "",
         });
 
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days

@@ -6,24 +6,31 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthProvider";
 import { LoadingSpinner } from "@/components/loading";
 
+/**
+ * @page HomePage
+ * @description This is the root entry point of the app. Its sole responsibility
+ * is to check the user's authentication status and redirect them to the
+ * appropriate page (/sign-in or /home). It shows a loading spinner
+ * during this check to prevent UI flashes.
+ */
 export default function HomePage() {
-    const { firebaseAuthUser, loading } = useAuth();
+    const { user, loading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        // Only redirect after loading is complete
+        // Only perform redirection after the initial loading is complete.
         if (!loading) {
-            if (firebaseAuthUser) {
-                // If there is a user, take them to the home page
-                router.push("/home");
+            if (user) {
+                // If a user profile exists, they are fully authenticated.
+                router.replace("/home");
             } else {
-                // If there is no user, take them to sign in
-                router.push("/sign-in");
+                // If no user, they need to sign in.
+                router.replace("/sign-in");
             }
         }
-    }, [firebaseAuthUser, loading, router]);
+    }, [user, loading, router]);
 
-    // Show a loading screen while checking the session
-    // to avoid flickering of the login page
-    return <LoadingSpinner fullScreen text="Redirecting..." size="medium" />;
+    // Render a full-screen loading spinner while the auth state is being determined.
+    // This is what the user sees for a brief moment upon visiting the site.
+    return <LoadingSpinner fullScreen text="Initializing..." size="medium" />;
 }

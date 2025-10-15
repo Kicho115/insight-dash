@@ -45,7 +45,9 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
     const [files, setFiles] = useState(initialFiles);
     const [isDeleting, setIsDeleting] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileMetadata | null>(null);
-    const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
+    const [activeActionMenu, setActiveActionMenu] = useState<string | null>(
+        null
+    );
     const menuRef = useRef<HTMLDivElement>(null);
 
     // State to show/hide status info card
@@ -127,25 +129,67 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                                     className={styles.statusInfoIcon}
                                     tabIndex={0}
                                     onMouseEnter={() => setShowStatusInfo(true)}
-                                    onMouseLeave={() => setShowStatusInfo(false)}
+                                    onMouseLeave={() =>
+                                        setShowStatusInfo(false)
+                                    }
                                     onFocus={() => setShowStatusInfo(true)}
                                     onBlur={() => setShowStatusInfo(false)}
-                                    onClick={() => setShowStatusInfo((prev) => !prev)}
+                                    onClick={() =>
+                                        setShowStatusInfo((prev) => !prev)
+                                    }
                                     aria-label="Status info"
                                 >
                                     {/* Circle with "i" SVG */}
-                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                        <circle cx="9" cy="9" r="8" stroke="#2563eb" strokeWidth="2" fill="#fff"/>
-                                        <text x="9" y="13" textAnchor="middle" fontSize="10" fill="#2563eb" fontFamily="Arial" fontWeight="bold">i</text>
+                                    <svg
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 18 18"
+                                        fill="none"
+                                    >
+                                        <circle
+                                            cx="9"
+                                            cy="9"
+                                            r="8"
+                                            stroke="#2563eb"
+                                            strokeWidth="2"
+                                            fill="#fff"
+                                        />
+                                        <text
+                                            x="9"
+                                            y="13"
+                                            textAnchor="middle"
+                                            fontSize="10"
+                                            fill="#2563eb"
+                                            fontFamily="Arial"
+                                            fontWeight="bold"
+                                        >
+                                            i
+                                        </text>
                                     </svg>
                                 </span>
                                 {showStatusInfo && (
                                     <div className={styles.statusInfoCard}>
                                         <strong>Status explanation:</strong>
-                                        <ul style={{ margin: "0.5rem 0 0 0", padding: 0, listStyle: "none" }}>
-                                            <li><b>Uploaded:</b> File has been uploaded and is waiting to be processed.</li>
-                                            <li><b>Processing:</b> File is currently being processed.</li>
-                                            <li><b>Ready:</b> File is processed and ready for use.</li>
+                                        <ul
+                                            style={{
+                                                margin: "0.5rem 0 0 0",
+                                                padding: 0,
+                                                listStyle: "none",
+                                            }}
+                                        >
+                                            <li>
+                                                <b>Uploaded:</b> File has been
+                                                uploaded and is waiting to be
+                                                processed.
+                                            </li>
+                                            <li>
+                                                <b>Processing:</b> File is
+                                                currently being processed.
+                                            </li>
+                                            <li>
+                                                <b>Ready:</b> File is processed
+                                                and ready for use.
+                                            </li>
                                         </ul>
                                     </div>
                                 )}
