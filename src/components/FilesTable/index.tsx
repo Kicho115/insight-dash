@@ -263,11 +263,12 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                                                             className={
                                                                 styles.menuItem
                                                             }
-                                                            onClick={() =>
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevent fileRow click
                                                                 handleOpenDeleteModal(
                                                                     file
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         >
                                                             <IoTrashOutline />
                                                             Delete

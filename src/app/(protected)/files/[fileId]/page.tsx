@@ -23,12 +23,13 @@ import styles from "./styles.module.css";
 export default async function FilePage({
     params,
 }: {
-    params: { fileId: string }; // 👈 usar SIEMPRE "fileId" aquí
+    params: Promise<{ fileId: string }>;
 }) {
     const user = await requireServerAuth();
 
     // Carga del archivo + permiso
-    const file = await getFileById(params.fileId, user.uid).catch(() => null);
+    const fileId = (await params).fileId;
+    const file = await getFileById(fileId, user.uid).catch(() => null);
     if (!file) notFound();
 
     const fileExtension = file?.name?.split(".").pop()?.toLowerCase();
