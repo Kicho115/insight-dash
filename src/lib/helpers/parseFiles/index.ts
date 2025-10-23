@@ -1,21 +1,39 @@
 import * as xlsx from "xlsx";
 
-export function getCsvHeaders(csvData: string): string[] {
-    const firstLine = csvData.split("\n")[0];
-    const headers = firstLine.split(",");
-    return headers;
+import { getHeadersFlow } from "@/services/genkit/flows/getHeaders";
+
+// We will check up to the first 10 rows of the file in case headers are not in the first row
+const MAX_ROWS_TO_CHECK = 10;
+
+export async function getCsvHeaders(csvData: string): Promise<string[]> {
+    try {
+        const rows = csvData.split("\n").slice(0, MAX_ROWS_TO_CHECK);
+        const headers = await getHeadersFlow(rows);
+
+        return headers;
+    } catch (error) {
+        console.error("Error getting CSV headers:", error);
+        throw error;
+    }
 }
 
-export function getXlsxHeaders(xlsxData: ArrayBuffer): string[] {
-    const workbook = xlsx.read(xlsxData, {
-        type: "array",
-        sheetRows: 1, // Read only the first row to get headers
-    });
+export async function getXlsxHeaders(xlsxData: ArrayBuffer): Promise<string[]> {
+    try {
+        const workbook = xlsx.read(xlsxData, {
+            type: "array",
+            sheetRows: MAX_ROWS_TO_CHECK,
+        });
 
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
 
-    const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-    const headers = jsonData[0] as string[];
-    return headers;
+        const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+        const rows = jsonData.map((row) => JSON.stringify(row as unknown[]));
+        const headers = await getHeadersFlow(rows);
+
+        return headers;
+    } catch (error) {
+        console.error("Error getting XLSX headers:", error);
+        throw error;
+    }
 }
