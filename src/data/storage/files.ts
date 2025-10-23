@@ -1,3 +1,5 @@
+"use server";
+
 import { storageAdmin } from "@/services/firebase/admin";
 
 /**

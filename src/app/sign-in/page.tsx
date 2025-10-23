@@ -20,7 +20,7 @@ import {
     signInWithEmail,
     signUpWithEmail,
 } from "@/services/firebase/auth";
-import { AuthError } from "firebase/auth";
+import { AuthError, User as FirebaseAuthUser } from "firebase/auth";
 
 /**
  * @function getFirebaseAuthErrorMessage
@@ -45,68 +45,84 @@ const getFirebaseAuthErrorMessage = (error: AuthError): string => {
     }
 };
 
+type AuthActionResult = {
+    user?: FirebaseAuthUser;
+    error?: AuthError;
+    cancelled?: boolean;
+};
+
 /**
  * @page SignInPage
  * @description A page for user sign-in and registration.
  */
 export default function SignInPage() {
-    // Page state
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
-    // Form fields state
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
-
-    // Controls visibility of the password reset request modal
     const [showResetModal, setShowResetModal] = useState(false);
 
-    // Auth context and router
-    const { firebaseAuthUser, loading: authLoading } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
-    // Effect to handle redirection after successful authentication
+    // This effect applies a temporary workaround for a known Firebase issue
+    // where closing the Google Sign-In popup takes 8 seconds to be detected.
     useEffect(() => {
-        if (firebaseAuthUser && !authLoading) {
-            // Small delay to ensure loading state is visible
-            const timeoutId = setTimeout(() => {
-                // User is authenticated, redirect to home
-                router.replace("/home");
-            }, 500); // 500ms delay to show the loading state
+        // Save the original setTimeout function
+        const originalSetTimeout = window.setTimeout;
 
-            return () => clearTimeout(timeoutId);
+        // Override the global setTimeout
+        const customSetTimeout = function (
+            fn: TimerHandler,
+            delay?: number,
+            ...args: unknown[]
+        ): number {
+            if (delay === 8000) {
+                delay = 1000;
+            }
+            // Call the original setTimeout with the (potentially modified) delay
+            return originalSetTimeout(fn, delay, ...args);
+        };
+
+        customSetTimeout.__promisify__ = originalSetTimeout.__promisify__;
+        window.setTimeout = customSetTimeout as typeof window.setTimeout;
+
+        // Restore the original setTimeout to prevent side effects in other parts of the app.
+        return () => {
+            window.setTimeout = originalSetTimeout;
+        };
+    }, []); // Run this effect only once when the component mounts
+
+    // If a logged-in user tries to navigate here, send them away.
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.replace("/home");
         }
-    }, [firebaseAuthUser, authLoading, router]);
+    }, [user, authLoading, router]);
 
-    /**
-     * @function handleSubmit
-     * @description Handles the form submission for both sign-in and sign-up.
-     */
-    const handleSubmit = async (event: FormEvent) => {
-        event.preventDefault();
+    const handleAuthAction = async (
+        action: () => Promise<AuthActionResult>
+    ) => {
         setIsLoading(true);
         setError(null);
-
         try {
-            let result;
-            if (isSignUp) {
-                result = await signUpWithEmail({ email, password, name });
-            } else {
-                result = await signInWithEmail(email, password);
+            const result = await action();
+
+            if (result.cancelled) {
+                setIsLoading(false); // Just stop loading, no error message is needed.
+                return;
             }
 
             if (result.error) {
                 setError(getFirebaseAuthErrorMessage(result.error));
-                setIsLoading(false);
+                setIsLoading(false); // Stop loading only on error
             }
-            // Don't set loading to false on success - let the redirect handle it
-            // This ensures the spinner stays visible until navigation completes
-        } catch (error) {
+        } catch (err) {
             console.error(
-                "Unexpected error during email authentication:",
-                error
+                "An unexpected error occurred during auth action:",
+                err
             );
             setError("An unexpected error occurred. Please try again.");
             setIsLoading(false);
@@ -114,30 +130,28 @@ export default function SignInPage() {
     };
 
     /**
-     * @function handleGoogleSignIn
-     * @description Handles the Google Sign-In button click.
+     * @function handleSubmit
+     * @description Handles the form submission for both sign-in and sign-up.
      */
-    const handleGoogleSignIn = async () => {
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const result = await signInWithGoogle();
-            if (result.error) {
-                setError(getFirebaseAuthErrorMessage(result.error));
-                setIsLoading(false);
-            }
-            // Don't set loading to false on success - let the redirect handle it
-            // This ensures the spinner stays visible until navigation completes
-        } catch (error) {
-            console.error("Unexpected error during Google sign in:", error);
-            setError("An unexpected error occurred. Please try again.");
-            setIsLoading(false);
+    const handleSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        if (isSignUp) {
+            handleAuthAction(() => signUpWithEmail({ email, password, name }));
+        } else {
+            handleAuthAction(() => signInWithEmail(email, password));
         }
     };
 
+    /**
+     * @function handleGoogleSignIn
+     * @description Handles the Google Sign-In button click.
+     */
+    const handleGoogleSignIn = () => {
+        handleAuthAction(signInWithGoogle);
+    };
+
     // Render a loading state while checking auth status
-    if (authLoading) {
+    if (authLoading || user) {
         return (
             <LoadingSpinner fullScreen text="Authenticating..." size="medium" />
         );
@@ -150,7 +164,9 @@ export default function SignInPage() {
                 <div className={styles.loadingOverlay}>
                     <LoadingSpinner
                         fullScreen
-                        text="Authenticating..."
+                        text={
+                            isSignUp ? "Creating account..." : "Signing in..."
+                        }
                         size="medium"
                     />
                 </div>

@@ -1,10 +1,12 @@
+export const runtime = "nodejs";
+
 /**
  * @fileoverview API Route to process a file (extract headers and generate summary).
  */
 
 import { NextResponse } from "next/server";
 import { updateFileMetadata } from "@/data/files";
-import { parseFile } from "@/lib/helpers/parseFile";
+import { parseFile } from "@/lib/parseFile";
 import { summarizeFileFlow } from "@/services/genkit/flows/summarizeFile";
 
 /**
