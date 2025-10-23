@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 /**
  * @fileoverview API Route to process a file (extract headers and generate summary).
  */
