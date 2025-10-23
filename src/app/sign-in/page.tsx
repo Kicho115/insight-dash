@@ -20,7 +20,7 @@ import {
     signInWithEmail,
     signUpWithEmail,
 } from "@/services/firebase/auth";
-import { AuthError } from "firebase/auth";
+import { AuthError, User as FirebaseAuthUser } from "firebase/auth";
 
 /**
  * @function getFirebaseAuthErrorMessage
@@ -43,6 +43,12 @@ const getFirebaseAuthErrorMessage = (error: AuthError): string => {
         default:
             return "An unexpected error occurred. Please try again.";
     }
+};
+
+type AuthActionResult = {
+    user?: FirebaseAuthUser;
+    error?: AuthError;
+    cancelled?: boolean;
 };
 
 /**
@@ -71,7 +77,7 @@ export default function SignInPage() {
         const customSetTimeout = function (
             fn: TimerHandler,
             delay?: number,
-            ...args: any[]
+            ...args: unknown[]
         ): number {
             if (delay === 8000) {
                 delay = 1000;
@@ -96,7 +102,9 @@ export default function SignInPage() {
         }
     }, [user, authLoading, router]);
 
-    const handleAuthAction = async (action: () => Promise<any>) => {
+    const handleAuthAction = async (
+        action: () => Promise<AuthActionResult>
+    ) => {
         setIsLoading(true);
         setError(null);
         try {
@@ -112,6 +120,10 @@ export default function SignInPage() {
                 setIsLoading(false); // Stop loading only on error
             }
         } catch (err) {
+            console.error(
+                "An unexpected error occurred during auth action:",
+                err
+            );
             setError("An unexpected error occurred. Please try again.");
             setIsLoading(false);
         }
