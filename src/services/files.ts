@@ -141,9 +141,3 @@ export const deleteFile = async (
         return { success: false, error: error as Error };
     }
 };
-export async function getFileById(id: string) {
-  const list = await getFilesForUser();
-  const file = list.find(f => f.id === id);
-  if (!file) throw new Error("File not found");
-  return file;
-}
