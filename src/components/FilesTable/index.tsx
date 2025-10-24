@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation"; // Use for re-fetching server data
 import styles from "./styles.module.css";
-import { File as FileMetadata } from "@/types/user";
+import { File as FileMetadata, FileStatus } from "@/types/user";
 import { ConfirmationModal } from "@/components/confirmationModal";
 import { deleteFile } from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";
@@ -37,6 +37,36 @@ const formatDate = (date: Date | string) => {
 interface FilesTableProps {
     initialFiles: FileMetadata[];
 }
+
+// Component to render the status badge based on file status
+const StatusBadge = ({ status }: { status: FileStatus }) => {
+    let style = styles.statusBadge;
+    let text = status;
+
+    switch (status) {
+        case "Uploaded":
+            style += ` ${styles.statusUploaded}`;
+            text = "Uploaded";
+            break;
+        case "Processing":
+            style += ` ${styles.statusProcessing}`;
+            text = "Processing";
+            break;
+        case "Ready":
+            style += ` ${styles.statusReady}`;
+            text = "Ready";
+            break;
+        case "Error":
+            style += ` ${styles.statusError}`;
+            text = "Error";
+            break;
+        default:
+            style += ` ${styles.statusUnknown}`;
+            text = "Error";
+    }
+
+    return <span className={style}>{text}</span>;
+};
 
 export const FilesTable = ({ initialFiles }: FilesTableProps) => {
     const router = useRouter();
@@ -225,11 +255,9 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        className={`${styles.statusBadge} ${styles.statusReady}`}
-                                    >
-                                        Ready
-                                    </span>
+                                    <StatusBadge
+                                        status={file.status || "Unknown"}
+                                    />
                                 </td>
                                 <td>
                                     <div className={styles.actionsCell}>

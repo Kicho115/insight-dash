@@ -15,7 +15,7 @@
     color: #222;
     border: 1px solid #2563eb;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
     padding: 0.8rem 0.8rem;
     width: 220px;
     max-width: 240px;
@@ -29,24 +29,24 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-        }
+}
 
-        .statusInfoCard strong {
+.statusInfoCard strong {
     display: block;
     margin-bottom: 0.5em;
     font-size: 0.85em;
     color: #2563eb;
-        }
+}
 
-        .statusInfoCard ul {
-            margin: 0;
-            padding-left: 1em;
-        }
+.statusInfoCard ul {
+    margin: 0;
+    padding-left: 1em;
+}
 
-        .statusInfoCard li {
+.statusInfoCard li {
     margin-bottom: 0.3em;
     font-size: 0.8em;
-        }
+}
 
 .tableContainer {
     background-color: #ffffff;
@@ -117,11 +117,35 @@
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* Specific styles for each status */
+.statusUploaded {
+    background-color: #e0e7ff; /* Light indigo */
+    color: #4338ca; /* Indigo */
+}
+
+.statusProcessing {
+    background-color: #fef3c7; /* Light amber */
+    color: #b45309; /* Amber */
+    /* Add a subtle animation */
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .statusReady {
-    background-color: #d1fae5;
-    color: #065f46;
+    background-color: #d1fae5; /* Light green */
+    color: #065f46; /* Green */
+}
+
+.statusError {
+    background-color: #fee2e2; /* Light red */
+    color: #b91c1c; /* Red */
+}
+
+.statusUnknown {
+    background-color: #f3f4f6; /* Light gray */
+    color: #4b5563; /* Gray */
 }
 
 .actionsCell {
@@ -217,4 +241,10 @@
 
 .tableRow {
     cursor: pointer;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.5;
+    }
 }

@@ -27,6 +27,8 @@ export const uploadFile = async ({
         return { success: false, error: new Error("User not authenticated.") };
     }
 
+    let fileId = "";
+
     try {
         // Step 1: Call our own backend API to get a signed URL
         const response = await fetch("/api/files/upload", {
@@ -63,8 +65,8 @@ export const uploadFile = async ({
             throw new Error("File upload to storage failed.");
         }
 
-        // Step 3: Process the file on the server (extract headers and generate summary)
-        const processResponse = await fetch(`/api/files/${fileId}/process`, {
+        // Step 3: Process the file on the server (extract headers and generate summary) without awaiting
+        fetch(`/api/files/${fileId}/process`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -73,13 +75,26 @@ export const uploadFile = async ({
                 filePath,
                 fileName: displayName || file.name,
             }),
+        }).catch((err) => {
+            // Log errors for the background process, but don't fail the main upload flow
+            console.error(
+                `Background processing trigger failed for ${fileId}:`,
+                err
+            );
+
+            // If upload fails, try to mark the file as Error if metadata was created
+            if (fileId) {
+                fetch(`/api/files/${fileId}/process/fail`, {
+                    method: "POST",
+                }).catch((e) =>
+                    console.error("Failed to mark file as error:", e)
+                ); // Optional: create a route to quickly mark as error
+            }
+
+            return { success: false, error: err as Error };
         });
 
-        if (!processResponse.ok) {
-            console.error("File processing failed, but upload succeeded.");
-            // The file is uploaded but not processed
-        }
-
+        // Upload is considered successful once the file is in Storage.
         return { success: true };
     } catch (error) {
         console.error("Error during file upload process:", error);
