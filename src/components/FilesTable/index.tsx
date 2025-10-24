@@ -14,6 +14,7 @@ import {
     IoGlobeOutline,
     IoEllipsisHorizontal,
     IoTrashOutline,
+    IoInformationCircleOutline,
 } from "react-icons/io5";
 
 // Helper functions (could be moved to a 'utils' file later)
@@ -155,11 +156,11 @@ export const FilesTable = () => {
                             <th>Size</th>
                             <th>Last Modified</th>
                             <th>Visibility</th>
-                            <th style={{ position: "relative" }}>
+                            {/* --- STATUS HEADER WITH INFO ICON --- */}
+                            <th className={styles.statusHeaderCell}>
                                 Status
-                                <span
-                                    className={styles.statusInfoIcon}
-                                    tabIndex={0}
+                                <div
+                                    className={styles.statusInfoIconWrapper}
                                     onMouseEnter={() => setShowStatusInfo(true)}
                                     onMouseLeave={() =>
                                         setShowStatusInfo(false)
@@ -169,63 +170,37 @@ export const FilesTable = () => {
                                     onClick={() =>
                                         setShowStatusInfo((prev) => !prev)
                                     }
-                                    aria-label="Status info"
+                                    tabIndex={0}
+                                    aria-label="Status Info"
                                 >
-                                    {/* Circle with "i" SVG */}
-                                    <svg
-                                        width="18"
-                                        height="18"
-                                        viewBox="0 0 18 18"
-                                        fill="none"
-                                    >
-                                        <circle
-                                            cx="9"
-                                            cy="9"
-                                            r="8"
-                                            stroke="#2563eb"
-                                            strokeWidth="2"
-                                            fill="#fff"
-                                        />
-                                        <text
-                                            x="9"
-                                            y="13"
-                                            textAnchor="middle"
-                                            fontSize="10"
-                                            fill="#2563eb"
-                                            fontFamily="Arial"
-                                            fontWeight="bold"
-                                        >
-                                            i
-                                        </text>
-                                    </svg>
-                                </span>
-                                {showStatusInfo && (
-                                    <div className={styles.statusInfoCard}>
-                                        <strong>Status explanation:</strong>
-                                        <ul
-                                            style={{
-                                                margin: "0.5rem 0 0 0",
-                                                padding: 0,
-                                                listStyle: "none",
-                                            }}
-                                        >
-                                            <li>
-                                                <b>Uploaded:</b> File has been
-                                                uploaded and is waiting to be
-                                                processed.
-                                            </li>
-                                            <li>
-                                                <b>Processing:</b> File is
-                                                currently being processed.
-                                            </li>
-                                            <li>
-                                                <b>Ready:</b> File is processed
-                                                and ready for use.
-                                            </li>
-                                        </ul>
-                                    </div>
-                                )}
+                                    <IoInformationCircleOutline />
+                                    {showStatusInfo && (
+                                        <div className={styles.statusInfoCard}>
+                                            <strong>Status explanation:</strong>
+                                            <ul>
+                                                <li>
+                                                    <b>Uploaded:</b> File is
+                                                    waiting to be processed.
+                                                </li>
+                                                <li>
+                                                    <b>Processing:</b> File is
+                                                    currently being processed.
+                                                </li>
+                                                <li>
+                                                    <b>Ready:</b> File is
+                                                    processed and ready for
+                                                    analysis.
+                                                </li>
+                                                <li>
+                                                    <b>Error:</b> An error
+                                                    occurred during processing.
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
                             </th>
+                            {/* --- END STATUS HEADER --- */}
                             <th />
                         </tr>
                     </thead>
