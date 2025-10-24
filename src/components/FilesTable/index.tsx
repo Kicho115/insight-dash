@@ -3,16 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation"; // Use for re-fetching server data
 import styles from "./styles.module.css";
-import { File as FileMetadata } from "@/types/user";
+import { File as FileMetadata, FileStatus } from "@/types/user";
 import { ConfirmationModal } from "@/components/confirmationModal";
 import { deleteFile } from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";
+import { useFiles } from "@/context/FilesProvider";
 import {
     IoDocumentTextOutline,
     IoLockClosedOutline,
     IoGlobeOutline,
     IoEllipsisHorizontal,
     IoTrashOutline,
+    IoInformationCircleOutline,
 } from "react-icons/io5";
 
 // Helper functions (could be moved to a 'utils' file later)
@@ -34,27 +36,50 @@ const formatDate = (date: Date | string) => {
     }).format(new Date(date));
 };
 
-interface FilesTableProps {
-    initialFiles: FileMetadata[];
-}
+// Component to render the status badge based on file status
+const StatusBadge = ({ status }: { status: FileStatus }) => {
+    let style = styles.statusBadge;
+    let text = status;
 
-export const FilesTable = ({ initialFiles }: FilesTableProps) => {
+    switch (status) {
+        case "Uploaded":
+            style += ` ${styles.statusUploaded}`;
+            text = "Uploaded";
+            break;
+        case "Processing":
+            style += ` ${styles.statusProcessing}`;
+            text = "Processing";
+            break;
+        case "Ready":
+            style += ` ${styles.statusReady}`;
+            text = "Ready";
+            break;
+        case "Error":
+            style += ` ${styles.statusError}`;
+            text = "Error";
+            break;
+        default:
+            style += ` ${styles.statusUnknown}`;
+            text = "Error";
+    }
+
+    return <span className={style}>{text}</span>;
+};
+
+export const FilesTable = () => {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [files, setFiles] = useState(initialFiles);
+    const { files, isLoading, error } = useFiles();
     const [isDeleting, setIsDeleting] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileMetadata | null>(null);
-    const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null);
+    const [activeActionMenu, setActiveActionMenu] = useState<string | null>(
+        null
+    );
     const menuRef = useRef<HTMLDivElement>(null);
 
     // State to show/hide status info card
     const [showStatusInfo, setShowStatusInfo] = useState(false);
-
-    // Update state if the initial props change (e.g., on router.refresh)
-    useEffect(() => {
-        setFiles(initialFiles);
-    }, [initialFiles]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -97,6 +122,16 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
         setFileToDelete(null);
     };
 
+    // Use the isLoading state from the context for the initial load
+    if (isLoading) {
+        return <div className={styles.loading}>Loading files...</div>;
+    }
+
+    // Use the error state from the context
+    if (error) {
+        return <div className={styles.error}>{error}</div>;
+    }
+
     const handleFileClick = (fileId: string) => {
         router.push(`/files/${fileId}`);
     };
@@ -121,35 +156,51 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                             <th>Size</th>
                             <th>Last Modified</th>
                             <th>Visibility</th>
-                            <th style={{ position: "relative" }}>
+                            {/* --- STATUS HEADER WITH INFO ICON --- */}
+                            <th className={styles.statusHeaderCell}>
                                 Status
-                                <span
-                                    className={styles.statusInfoIcon}
-                                    tabIndex={0}
+                                <div
+                                    className={styles.statusInfoIconWrapper}
                                     onMouseEnter={() => setShowStatusInfo(true)}
-                                    onMouseLeave={() => setShowStatusInfo(false)}
+                                    onMouseLeave={() =>
+                                        setShowStatusInfo(false)
+                                    }
                                     onFocus={() => setShowStatusInfo(true)}
                                     onBlur={() => setShowStatusInfo(false)}
-                                    onClick={() => setShowStatusInfo((prev) => !prev)}
-                                    aria-label="Status info"
+                                    onClick={() =>
+                                        setShowStatusInfo((prev) => !prev)
+                                    }
+                                    tabIndex={0}
+                                    aria-label="Status Info"
                                 >
-                                    {/* Circle with "i" SVG */}
-                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                        <circle cx="9" cy="9" r="8" stroke="#2563eb" strokeWidth="2" fill="#fff"/>
-                                        <text x="9" y="13" textAnchor="middle" fontSize="10" fill="#2563eb" fontFamily="Arial" fontWeight="bold">i</text>
-                                    </svg>
-                                </span>
-                                {showStatusInfo && (
-                                    <div className={styles.statusInfoCard}>
-                                        <strong>Status explanation:</strong>
-                                        <ul style={{ margin: "0.5rem 0 0 0", padding: 0, listStyle: "none" }}>
-                                            <li><b>Uploaded:</b> File has been uploaded and is waiting to be processed.</li>
-                                            <li><b>Processing:</b> File is currently being processed.</li>
-                                            <li><b>Ready:</b> File is processed and ready for use.</li>
-                                        </ul>
-                                    </div>
-                                )}
+                                    <IoInformationCircleOutline />
+                                    {showStatusInfo && (
+                                        <div className={styles.statusInfoCard}>
+                                            <strong>Status explanation:</strong>
+                                            <ul>
+                                                <li>
+                                                    <b>Uploaded:</b> File is
+                                                    waiting to be processed.
+                                                </li>
+                                                <li>
+                                                    <b>Processing:</b> File is
+                                                    currently being processed.
+                                                </li>
+                                                <li>
+                                                    <b>Ready:</b> File is
+                                                    processed and ready for
+                                                    analysis.
+                                                </li>
+                                                <li>
+                                                    <b>Error:</b> An error
+                                                    occurred during processing.
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
                             </th>
+                            {/* --- END STATUS HEADER --- */}
                             <th />
                         </tr>
                     </thead>
@@ -181,11 +232,9 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        className={`${styles.statusBadge} ${styles.statusReady}`}
-                                    >
-                                        Ready
-                                    </span>
+                                    <StatusBadge
+                                        status={file.status || "Unknown"}
+                                    />
                                 </td>
                                 <td>
                                     <div className={styles.actionsCell}>
@@ -219,11 +268,12 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
                                                             className={
                                                                 styles.menuItem
                                                             }
-                                                            onClick={() =>
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevent fileRow click
                                                                 handleOpenDeleteModal(
                                                                     file
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         >
                                                             <IoTrashOutline />
                                                             Delete

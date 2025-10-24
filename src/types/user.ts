@@ -21,6 +21,8 @@ export type FilePermission = {
     role: "view" | "edit" | "admin";
 };
 
+export type FileStatus = "Uploaded" | "Processing" | "Ready" | "Error";
+
 export type File = {
     id: string;
     name: string;
@@ -34,7 +36,7 @@ export type File = {
     size: number;
     permissions: FilePermission[]; // Who can access this file
     isLocked: boolean; // To prevent deletion while other users are using it
-    status?: "Processing" | "Ready" | "Not ready"; // Processing status: 'processing', 'ready', 'error'
+    status: FileStatus;
     summary?: string; // File has summary after processing
     headers?: string[]; // Column headers after processing
 };

@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * @file This file contains a flow definition for generating a summary of a file.
  * @module services/genkit/flows/summarizeFile

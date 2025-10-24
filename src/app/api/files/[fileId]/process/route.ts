@@ -1,10 +1,12 @@
+export const runtime = "nodejs";
+
 /**
  * @fileoverview API Route to process a file (extract headers and generate summary).
  */
 
 import { NextResponse } from "next/server";
 import { updateFileMetadata } from "@/data/files";
-import { parseFile } from "@/lib/helpers/parseFile";
+import { parseFile } from "@/lib/parseFile";
 import { summarizeFileFlow } from "@/services/genkit/flows/summarizeFile";
 
 /**
@@ -15,8 +17,11 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ fileId: string }> }
 ) {
+    let fileId = "";
     try {
-        const { fileId } = await params;
+        const paramsResolved = await params;
+        fileId = paramsResolved.fileId;
+
         const body = await request.json();
         const { filePath, fileName } = body;
 
@@ -55,8 +60,8 @@ export async function POST(
         } catch (processingError) {
             console.error("Error processing file:", processingError);
 
-            // Mark as Not ready if processing fails
-            await updateFileMetadata(fileId, { status: "Not ready" });
+            // Mark as Error if processing fails
+            await updateFileMetadata(fileId, { status: "Error" });
 
             return NextResponse.json(
                 { error: "Failed to process file." },
@@ -65,6 +70,15 @@ export async function POST(
         }
     } catch (error) {
         console.error("Error in process file API route:", error);
+
+        if (fileId) {
+            try {
+                await updateFileMetadata(fileId, { status: "Error" });
+            } catch (updateErr) {
+                console.error("Failed to set error status:", updateErr);
+            }
+        }
+
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

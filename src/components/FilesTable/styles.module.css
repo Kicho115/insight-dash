@@ -1,3 +1,83 @@
+/* Make the header cell relative to position the icon */
+.statusHeaderCell {
+    position: relative;
+    padding-right: 0.2rem; /* Add space for the icon */
+}
+
+/* Wrapper for the icon and tooltip */
+.statusInfoIconWrapper {
+    position: relative;
+    top: 50%; /* Center vertically */
+    right: -0.1rem; /* Position on the right */
+    transform: translateY(-50%);
+    cursor: help;
+    display: inline-flex; /* Use flex for alignment */
+    align-items: center; /* Vertically align icon */
+    color: #0053fa; /* Gray color for icon */
+    outline: none; /* Remove focus outline */
+}
+
+.statusInfoIconWrapper svg {
+    font-size: 0.9rem; /* Smaller icon size */
+    display: block; /* Ensure SVG behaves like a block element */
+}
+
+/* The tooltip card */
+.statusInfoCard {
+    position: absolute;
+    top: 120%; /* Position below the icon */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 230px; /* Set a specific width */
+    background-color: #374151; /* Dark background */
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem; /* Smaller font size */
+    font-weight: normal; /* Reset font weight */
+    line-height: 1.4;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    text-align: left;
+    white-space: normal; /* Allow text wrapping */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    pointer-events: none; /* Don't block hover on the icon */
+}
+
+/* Show tooltip on hover/focus */
+.statusInfoIconWrapper:hover .statusInfoCard,
+.statusInfoIconWrapper:focus .statusInfoCard {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Styling for the list inside the tooltip */
+.statusInfoCard ul {
+    margin: 0.4rem 0 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.statusInfoCard strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: #c0c6d1;
+}
+
+.statusInfoCard li {
+    margin-bottom: 0.2rem;
+}
+.statusInfoCard li:last-child {
+    margin-bottom: 0;
+}
+.statusInfoCard b {
+    color: #e5e7eb; /* Lighter color for status names */
+}
+
 .tableContainer {
     background-color: #ffffff;
     border-radius: 0.75rem;
@@ -21,10 +101,9 @@
 }
 
 .table th {
-    font-size: 0.75rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #6b7280;
-    text-transform: uppercase;
     letter-spacing: 0.05em;
     background-color: #f9fafb;
 }
@@ -67,11 +146,35 @@
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* Specific styles for each status */
+.statusUploaded {
+    background-color: #e0e7ff; /* Light indigo */
+    color: #4338ca; /* Indigo */
+}
+
+.statusProcessing {
+    background-color: #fef3c7; /* Light amber */
+    color: #b45309; /* Amber */
+    /* Add a subtle animation */
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .statusReady {
-    background-color: #d1fae5;
-    color: #065f46;
+    background-color: #d1fae5; /* Light green */
+    color: #065f46; /* Green */
+}
+
+.statusError {
+    background-color: #fee2e2; /* Light red */
+    color: #b91c1c; /* Red */
+}
+
+.statusUnknown {
+    background-color: #f3f4f6; /* Light gray */
+    color: #4b5563; /* Gray */
 }
 
 .actionsCell {
@@ -167,4 +270,10 @@
 
 .tableRow {
     cursor: pointer;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.5;
+    }
 }

@@ -4,7 +4,7 @@ import { dbAdmin } from "@/services/firebase/admin";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { File as FileMetadata } from "@/types/user";
+import { File as FileMetadata, FileStatus } from "@/types/user";
 
 interface PrepareUploadOptions {
     fileName: string;
@@ -49,6 +49,7 @@ export async function prepareFileUpload({
         ],
         isLocked: false,
         url: "",
+        status: "Uploaded" as FileStatus,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
@@ -182,7 +183,7 @@ export async function updateFileMetadata(
     }: {
         summary?: string;
         headers?: string[];
-        status?: "Processing" | "Ready" | "Not ready";
+        status?: FileStatus;
     }
 ): Promise<void> {
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
@@ -195,7 +196,7 @@ export async function updateFileMetadata(
     const updateData: {
         summary?: string;
         headers?: string[];
-        status?: "Processing" | "Ready" | "Not ready";
+        status?: FileStatus;
         updatedAt: FirebaseFirestore.FieldValue;
     } = {
         updatedAt: FieldValue.serverTimestamp(),

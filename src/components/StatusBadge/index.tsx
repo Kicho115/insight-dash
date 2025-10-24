@@ -1,13 +1,15 @@
 import styles from "./styles.module.css";
+import { FileStatus } from "@/types/user";
 
 interface StatusBadgeProps {
-    status: "Not ready" | "Ready" | "Processing";
+    status: FileStatus;
 }
 
 const statusStyles = {
-    "Not ready": styles.notReady,
+    Uploaded: styles.notReady,
     Ready: styles.ready,
     Processing: styles.processing,
+    Error: styles.error,
 };
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {

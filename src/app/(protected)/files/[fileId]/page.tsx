@@ -26,14 +26,16 @@ export default async function FilePage({
     params: Promise<{ fileId: string }>;
 }) {
     const user = await requireServerAuth();
-    const { fileId } = await params;
-    const file = await getFileById(fileId, user.uid);
-    const fileExtension = file?.name.split(".").pop()?.toLowerCase();
-    const fileOwner = file ? await getUserById(file.creatorId) : null;
 
-    if (!file) {
-        notFound();
-    }
+    // Carga del archivo + permiso
+    const fileId = (await params).fileId;
+    const file = await getFileById(fileId, user.uid).catch(() => null);
+    if (!file) notFound();
+
+    const fileExtension = file?.name?.split(".").pop()?.toLowerCase();
+    const fileOwner = file?.creatorId
+        ? await getUserById(file.creatorId)
+        : null;
 
     return (
         <div className={styles.container}>
@@ -53,7 +55,7 @@ export default async function FilePage({
                         <p className={styles.headerText}>{file.name} </p>
                     </div>
                 </div>
-                <StatusBadge status={file.status ?? "Not ready"} />
+                <StatusBadge status={file.status ?? "Error"} />
             </div>
             <div className={styles.summary}>
                 <h2 className={styles.subtitle}>Summary</h2>
