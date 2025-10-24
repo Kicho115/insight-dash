@@ -16,6 +16,11 @@
     color: #92400e;
 }
 
+.error {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
 .processing {
     background-color: #e0e7ff;
     color: #3730a3;

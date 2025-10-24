@@ -55,7 +55,7 @@ export default async function FilePage({
                         <p className={styles.headerText}>{file.name} </p>
                     </div>
                 </div>
-                <StatusBadge status={file.status ?? "Not ready"} />
+                <StatusBadge status={file.status ?? "Error"} />
             </div>
             <div className={styles.summary}>
                 <h2 className={styles.subtitle}>Summary</h2>

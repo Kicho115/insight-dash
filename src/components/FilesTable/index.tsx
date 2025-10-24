@@ -7,6 +7,7 @@ import { File as FileMetadata, FileStatus } from "@/types/user";
 import { ConfirmationModal } from "@/components/confirmationModal";
 import { deleteFile } from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";
+import { useFiles } from "@/context/FilesProvider";
 import {
     IoDocumentTextOutline,
     IoLockClosedOutline,
@@ -33,10 +34,6 @@ const formatDate = (date: Date | string) => {
         day: "numeric",
     }).format(new Date(date));
 };
-
-interface FilesTableProps {
-    initialFiles: FileMetadata[];
-}
 
 // Component to render the status badge based on file status
 const StatusBadge = ({ status }: { status: FileStatus }) => {
@@ -68,11 +65,11 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
-export const FilesTable = ({ initialFiles }: FilesTableProps) => {
+export const FilesTable = () => {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [files, setFiles] = useState(initialFiles);
+    const { files, isLoading, error } = useFiles();
     const [isDeleting, setIsDeleting] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileMetadata | null>(null);
     const [activeActionMenu, setActiveActionMenu] = useState<string | null>(
@@ -82,11 +79,6 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
 
     // State to show/hide status info card
     const [showStatusInfo, setShowStatusInfo] = useState(false);
-
-    // Update state if the initial props change (e.g., on router.refresh)
-    useEffect(() => {
-        setFiles(initialFiles);
-    }, [initialFiles]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -128,6 +120,16 @@ export const FilesTable = ({ initialFiles }: FilesTableProps) => {
         setIsDeleting(false);
         setFileToDelete(null);
     };
+
+    // Use the isLoading state from the context for the initial load
+    if (isLoading) {
+        return <div className={styles.loading}>Loading files...</div>;
+    }
+
+    // Use the error state from the context
+    if (error) {
+        return <div className={styles.error}>{error}</div>;
+    }
 
     const handleFileClick = (fileId: string) => {
         router.push(`/files/${fileId}`);

@@ -1,16 +1,15 @@
 import styles from "./styles.module.css";
 import { requireServerAuth } from "@/lib/serverAuth";
-import { getFilesForUser } from "@/data/files";
 import { FilesTable } from "@/components/FilesTable";
 import { AddFileButton } from "./AddFileButton"; // A small client component for the button
 
 export const dynamic = "force-dynamic";
 
 export default async function FilesPage() {
-    const user = await requireServerAuth();
-    // Fetch data on the server, before the page is sent to the client
-    const initialFiles = await getFilesForUser(user.uid);
+    // 1. Authenticate on the server
+    await requireServerAuth();
 
+    // Render the layout and the Client Component.
     return (
         <div className={styles.container}>
             <header className={styles.header}>
@@ -20,8 +19,9 @@ export default async function FilesPage() {
                 </div>
                 <AddFileButton />
             </header>
-            {/* Pass the server-fetched data as a prop to the client component */}
-            <FilesTable initialFiles={initialFiles} />
+
+            {/* FilesTable fetches and manages its own data using the context */}
+            <FilesTable />
         </div>
     );
 }
