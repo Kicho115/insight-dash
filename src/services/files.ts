@@ -27,8 +27,6 @@ export const uploadFile = async ({
         return { success: false, error: new Error("User not authenticated.") };
     }
 
-    let fileId = "";
-
     try {
         // Step 1: Call our own backend API to get a signed URL
         const response = await fetch("/api/files/upload", {

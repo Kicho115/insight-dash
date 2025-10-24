@@ -6,7 +6,6 @@ import {
     useContext,
     ReactNode,
     useEffect,
-    useCallback,
 } from "react";
 import {
     collection,
@@ -18,7 +17,6 @@ import {
 } from "firebase/firestore";
 import { db } from "@/services/firebase/config";
 import { File as FileMetadata, FileStatus } from "@/types/user";
-import { getFilesForUser } from "@/services/files";
 import { useAuth } from "./AuthProvider";
 
 interface FilesContextType {

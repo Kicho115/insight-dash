@@ -33,7 +33,6 @@ export async function POST(request: Request) {
         });
 
         return NextResponse.json({ signedUrl, fileId, filePath });
-        ``;
     } catch (error) {
         console.error("Error in prepare-upload API route:", error);
         if ((error as Error).message === "Authentication required") {
