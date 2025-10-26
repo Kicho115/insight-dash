@@ -1,0 +1,103 @@
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 9999px;
+  background: #1f2937; /* gray-800 */
+  color: white;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  z-index: 2147483000;
+}
+
+.fab:hover { background: #111827; }
+
+/* Panel (out-of-flow overlay) */
+.panel {
+  position: fixed;
+  right: 20px;
+  bottom: 86px; /* above the FAB */
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  height: 520px;
+  max-height: calc(100vh - 120px);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  z-index: 2147483001;
+}
+
+/* Header */
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+.headerTitle { font-weight: 700; color: #111827; }
+.iconButton { border: none; background: transparent; color: #374151; cursor: pointer; font-size: 18px; }
+
+/* Messages */
+.body {
+  padding: 12px;
+  overflow-y: auto;
+  background: #fbfbfb;
+}
+.rowUser, .rowAssistant { display: flex; margin-bottom: 8px; }
+.rowUser { justify-content: flex-end; }
+.rowAssistant { justify-content: flex-start; }
+.bubble {
+  max-width: 85%;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.3rem;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+.rowUser .bubble { background: #2563eb; color: white; border-top-right-radius: 6px; }
+.rowAssistant .bubble { background: #eef2f7; color: #111827; border-top-left-radius: 6px; }
+.error {
+  margin-top: 6px;
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+/* Composer */
+.composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+.input {
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  outline: none;
+}
+.input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+.send {
+  width: 40px; height: 40px; border-radius: 9999px; border: none;
+  background: #2563eb; color: white; display: grid; place-items: center; cursor: pointer;
+}
+.send:disabled { background: #93c5fd; cursor: not-allowed; }
