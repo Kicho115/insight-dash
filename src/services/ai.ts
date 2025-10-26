@@ -1,27 +1,24 @@
 import type { ChatMessage } from "@/lib/helpers/chat";
 
-
-export interface AskAiInput {
+export interface AskAiRequest {
   messages: ChatMessage[];
   options?: Record<string, unknown>;
 }
 
-
 export interface AskAiSuccess {
   success: true;
-  data: unknown; 
+  data: { content: string };
 }
 
-
-export interface AskAiError {
+export interface AskAiFailure {
   success: false;
   error: string;
 }
 
-export type AskAiResult = AskAiSuccess | AskAiError;
+export type AskAiResponse = AskAiSuccess | AskAiFailure;
 
-
-export async function askAi(input: AskAiInput): Promise<AskAiResult> {
+/** Call the internal API to ask the model. */
+export async function askAi(input: AskAiRequest): Promise<AskAiResponse> {
   const res = await fetch("/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,8 +26,7 @@ export async function askAi(input: AskAiInput): Promise<AskAiResult> {
   });
 
   try {
-    const json = (await res.json()) as AskAiResult;
-    return json;
+    return (await res.json()) as AskAiResponse;
   } catch {
     return { success: false, error: "Invalid JSON from /api/ai" };
   }
