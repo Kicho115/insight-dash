@@ -1,17 +1,25 @@
-type AIMessage = { role: "system" | "user" | "assistant"; content: string };
+import type { ChatMessage } from "@/lib/helpers/chat";
+
 
 export interface AskAiInput {
-  userId: string;
-  messages: AIMessage[];
-  fileIds?: string[];    // opcional: IDs de archivos para dar contexto
-  options?: Record<string, unknown>; // temperature, top_p, etc., si tu API lo usa
+  messages: ChatMessage[];
+  options?: Record<string, unknown>;
 }
 
-export interface AskAiResult {
-  success: boolean;
-  data?: any;     // estructura de respuesta que devuelva tu askAi.ts
-  error?: string; // mensaje de error legible
+
+export interface AskAiSuccess {
+  success: true;
+  data: unknown; 
 }
+
+
+export interface AskAiError {
+  success: false;
+  error: string;
+}
+
+export type AskAiResult = AskAiSuccess | AskAiError;
+
 
 export async function askAi(input: AskAiInput): Promise<AskAiResult> {
   const res = await fetch("/api/ai", {
@@ -20,7 +28,6 @@ export async function askAi(input: AskAiInput): Promise<AskAiResult> {
     body: JSON.stringify(input),
   });
 
-  // Nunca lances aquí: devuelve objeto tipado y maneja en el componente
   try {
     const json = (await res.json()) as AskAiResult;
     return json;

@@ -1,59 +1,63 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = process.env.GEMINI_API_KEY;
-if (!API_KEY) throw new Error("Falta GEMINI_API_KEY en .env.local");
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+import type { ChatMessage } from "@/lib/helpers/chat";
+import { serializeMessages, extractTextFromGenkitResult } from "@/lib/helpers/chat";
+import * as genkit from "@/services/genkit";
 
-type Role = "system" | "user" | "assistant";
-export type AIMessage = { role: Role; content: string };
+type AiLike = {
+  generate: (args: { prompt: string; model?: unknown }) => Promise<unknown>;
+};
 
-interface AskAIInput {
-  messages: AIMessage[];
-  fileIds?: string[];
+function isAiLike(obj: unknown): obj is AiLike {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "generate" in (obj as Record<string, unknown>) &&
+    typeof (obj as { generate: unknown }).generate === "function"
+  );
 }
 
-export async function askAI({ messages, fileIds = [] }: AskAIInput) {
-  const genAI = new GoogleGenerativeAI(API_KEY!);
-  const model = genAI.getGenerativeModel({ model: MODEL });
+/**
+ * Try to pick a model out of the genkit module in a safe way.
+ */
+function pickModel(mod: unknown): unknown | undefined {
+  if (typeof mod !== "object" || mod === null) return undefined;
+  const rec = mod as Record<string, unknown>;
+  if ("model" in rec) return rec.model;
+  if ("defaultModel" in rec) return rec.defaultModel;
+  if ("getModel" in rec && typeof rec.getModel === "function") {
+    try {
+      return (rec.getModel as () => unknown)();
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
 
-  // 1) Separa system prompts de la historia
-  const systemPrompts = messages.filter(m => m.role === "system").map(m => m.content);
-  const nonSystem = messages.filter(m => m.role !== "system");
+export interface AskAIInput {
+  messages: ChatMessage[];
+}
 
-  // 2) Construye history para chat.start
-  //    La SDK usa roles "user" | "model"
-  const history = nonSystem.slice(0, -1).map(m => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
+/**
+ * Ask the configured Genkit model to respond to the provided messages.
+ * @param input - chat messages (system/user/assistant)
+ * @returns an object with a normalized { content: string }
+ */
+export async function askAI(input: AskAIInput): Promise<{ content: string }> {
+  const ai: unknown = (genkit as Record<string, unknown>).ai;
+  if (!isAiLike(ai)) {
+    throw new Error("Genkit 'ai' is not configured.");
+  }
 
-  // 3) Prompt adicional para contexto del archivo (si solo quieres “hint”)
-  const fileHint =
-    fileIds.length > 0
-      ? `\n\n[contexto_archivo]\nTrabaja con el/los archivo(s) id=${fileIds.join(", ")}.\n`
-      : "";
+  const model = pickModel(genkit);
+  const prompt = serializeMessages(input.messages);
 
-  const sys = systemPrompts.join("\n\n");
-  const last = nonSystem.at(-1)?.content || "";
+  const result =
+    model !== undefined
+      ? await ai.generate({ model, prompt })
+      : await ai.generate({ prompt });
 
-  const preamble =
-    (sys ? sys + "\n\n" : "") +
-    "Estilo: responde de forma clara y accionable. Formato markdown válido." +
-    fileHint;
-
-  // 4) Inicia chat con historia y envía sólo el último user
-  const chat = model.startChat({
-    history: [
-      // Inyecta un "system" implícito como primer mensaje de usuario
-      ...(preamble
-        ? [{ role: "user" as const, parts: [{ text: preamble }] }]
-        : []),
-      ...history,
-    ],
-  });
-
-  const res = await chat.sendMessage(last);
-  const text = res.response?.text?.() ?? "";
-  return { content: text };
+  const content = extractTextFromGenkitResult(result);
+  return { content };
 }

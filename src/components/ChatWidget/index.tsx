@@ -1,31 +1,28 @@
 "use client";
 
-
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles.module.css";
 import { askAi } from "@/services/ai";
 import type { ChatMessage } from "@/lib/helpers/chat";
-import { IoSend, IoChatbubblesOutline, IoClose } from "react-icons/io5";
+import { IoChatbubblesOutline, IoClose, IoSend } from "react-icons/io5";
 
-export default function FileChat() {
-  // UI state
+
+export default function ChatWidget() {
   const [open, setOpen] = useState<boolean>(false);
-
-  // Chat state
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: "Hi! How can I help you today?" },
-  ]);
   const [input, setInput] = useState<string>("");
   const [sending, setSending] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "Hi! How can I help you today?" },
+  ]);
+
   const canSend = useMemo<boolean>(() => input.trim().length > 0 && !sending, [input, sending]);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll on open or new messages
   useEffect(() => {
     if (open) {
+
       viewportRef.current?.scrollTo({ top: viewportRef.current.scrollHeight });
     }
   }, [open, messages]);
@@ -36,21 +33,22 @@ export default function FileChat() {
 
     setError(null);
     setInput("");
-
     const next: ChatMessage[] = [...messages, { role: "user", content: text }];
+
     setMessages(next);
     setSending(true);
-
     try {
       const result = await askAi({ messages: next, options: { temperature: 0.2 } });
+
       if (result.success) {
-        // Expect { content: string } in result.data (do not assume SDK-specific shapes)
-        const payload = result.data as unknown;
+
+        const payload = result.data;
         let content = "No content.";
         if (typeof payload === "object" && payload !== null && "content" in payload) {
-          const raw = (payload as { content: unknown }).content;
-          content = typeof raw === "string" ? raw : JSON.stringify(raw);
+          const maybe = (payload as { content: unknown }).content;
+          content = typeof maybe === "string" ? maybe : JSON.stringify(maybe);
         }
+
         setMessages([...next, { role: "assistant", content }]);
       } else {
         setError(result.error || "The AI could not respond.");
@@ -70,14 +68,14 @@ export default function FileChat() {
     }
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>): void {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     void send();
   }
 
   return (
     <>
-      {/* Floating toggle button (always visible) */}
+      {/* Toggle Button (always visible) */}
       <button
         type="button"
         className={styles.fab}
@@ -89,7 +87,7 @@ export default function FileChat() {
         <IoChatbubblesOutline />
       </button>
 
-      {/* Overlay panel (out-of-flow) */}
+      {/* Overlay Panel */}
       {open && (
         <div className={styles.panel} role="dialog" aria-label="AI chat">
           <header className={styles.header}>

@@ -1,33 +1,22 @@
 import { NextResponse } from "next/server";
 import { askAI } from "@/services/genkit/askAi";
+import type { ChatMessage } from "@/lib/helpers/chat";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as { messages?: ChatMessage[]; options?: Record<string, unknown> };
 
-    // Soporta { messages, fileIds } y, si viene sólo question, lo adaptamos
-    const messages = Array.isArray(body?.messages)
-      ? body.messages
-      : body?.question
-        ? [{ role: "user", content: String(body.question) }]
-        : [];
-
-    const fileIds = Array.isArray(body?.fileIds) ? body.fileIds : [];
-
-    if (!messages.length) {
+    if (!Array.isArray(body.messages) || body.messages.length === 0) {
       return NextResponse.json(
-        { success: false, error: "Faltan 'messages' (historial) o 'question'." },
+        { success: false, error: "Missing 'messages' (array of chat turns)." },
         { status: 400 }
       );
     }
 
-    const data = await askAI({ messages, fileIds }); // <- lo implementamos abajo
+    const data = await askAI({ messages: body.messages });
     return NextResponse.json({ success: true, data });
-  } catch (err: any) {
-    console.error("AI route error:", err);
-    return NextResponse.json(
-      { success: false, error: err?.message || "Internal error" },
-      { status: 500 }
-    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unexpected server error.";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

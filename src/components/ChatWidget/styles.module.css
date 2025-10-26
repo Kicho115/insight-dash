@@ -16,7 +16,9 @@
   z-index: 2147483000;
 }
 
-.fab:hover { background: #111827; }
+.fab:hover {
+  background: #111827; /* gray-900 */
+}
 
 /* Panel (out-of-flow overlay) */
 .panel {
@@ -46,18 +48,36 @@
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
 }
-.headerTitle { font-weight: 700; color: #111827; }
-.iconButton { border: none; background: transparent; color: #374151; cursor: pointer; font-size: 18px; }
 
-/* Messages */
+.headerTitle {
+  font-weight: 700;
+  color: #111827;
+}
+
+.iconButton {
+  border: none;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* Messages area */
 .body {
   padding: 12px;
   overflow-y: auto;
   background: #fbfbfb;
 }
-.rowUser, .rowAssistant { display: flex; margin-bottom: 8px; }
+
+.rowUser,
+.rowAssistant {
+  display: flex;
+  margin-bottom: 8px;
+}
+
 .rowUser { justify-content: flex-end; }
 .rowAssistant { justify-content: flex-start; }
+
 .bubble {
   max-width: 85%;
   border-radius: 12px;
@@ -67,8 +87,19 @@
   word-wrap: break-word;
   white-space: pre-wrap;
 }
-.rowUser .bubble { background: #2563eb; color: white; border-top-right-radius: 6px; }
-.rowAssistant .bubble { background: #eef2f7; color: #111827; border-top-left-radius: 6px; }
+
+.rowUser .bubble {
+  background: #2563eb;
+  color: white;
+  border-top-right-radius: 6px;
+}
+
+.rowAssistant .bubble {
+  background: #eef2f7;
+  color: #111827;
+  border-top-left-radius: 6px;
+}
+
 .error {
   margin-top: 6px;
   color: #991b1b;
@@ -88,6 +119,7 @@
   border-top: 1px solid #e5e7eb;
   background: #ffffff;
 }
+
 .input {
   height: 40px;
   padding: 8px 12px;
@@ -95,9 +127,25 @@
   border-radius: 9999px;
   outline: none;
 }
-.input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
-.send {
-  width: 40px; height: 40px; border-radius: 9999px; border: none;
-  background: #2563eb; color: white; display: grid; place-items: center; cursor: pointer;
+
+.input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
 }
-.send:disabled { background: #93c5fd; cursor: not-allowed; }
+
+.send {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.send:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
