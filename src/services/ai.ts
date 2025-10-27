@@ -1,8 +1,12 @@
+// src/services/ai.ts
 import type { ChatMessage } from "@/lib/helpers/chat";
 
 export interface AskAiRequest {
   messages: ChatMessage[];
-  options?: Record<string, unknown>;
+  fileId?: string;
+  options?: {
+    temperature?: number;
+  };
 }
 
 export interface AskAiSuccess {
@@ -17,7 +21,6 @@ export interface AskAiFailure {
 
 export type AskAiResponse = AskAiSuccess | AskAiFailure;
 
-/** Call the internal API to ask the model. */
 export async function askAi(input: AskAiRequest): Promise<AskAiResponse> {
   const res = await fetch("/api/ai", {
     method: "POST",

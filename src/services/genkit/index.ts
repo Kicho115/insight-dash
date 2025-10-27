@@ -6,7 +6,7 @@ if (!GEMINI_API_KEY) {
   throw new Error("Missing GEMINI_API_KEY in .env.local");
 }
 
-export const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+export const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 
 export const ai = genkit({

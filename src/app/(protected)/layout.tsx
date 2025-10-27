@@ -9,8 +9,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthProvider";
 import styles from "./layout.module.css";
 
-// Floating chat overlay (out-of-flow)
-import ChatWidget from "@/components/ChatWidget";
+
 
 // Providers & UI
 import { UIProvider, useUI } from "@/context/UIProvider";

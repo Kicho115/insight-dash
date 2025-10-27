@@ -1,4 +1,3 @@
-// src/app/(protected)/files/[fileId]/page.tsx
 import { notFound } from "next/navigation";
 import { getFileById } from "@/data/files";
 import { getUserById } from "@/data/users";
@@ -16,20 +15,13 @@ export default async function FilePage({
   params: Promise<{ fileId: string }>;
 }) {
   const user = await requireServerAuth();
+  const { fileId } = await params;
 
-  const { fileId } = await params;       
   const file = await getFileById(fileId, user.uid).catch(() => null);
   if (!file) notFound();
 
   const ext = file.name?.split(".").pop()?.toLowerCase();
   const owner = file.creatorId ? await getUserById(file.creatorId) : null;
-
-  const hint =
-    `You are assisting with this file. ` +
-    `Name: ${file.displayName ?? file.name}. ` +
-    `Extension: ${ext ?? "unknown"}. ` +
-    `Size: ${formatBytes(file.size)}. ` +
-    `Summary: ${file.summary ?? "No summary."}`;
 
   return (
     <div className={styles.container}>
@@ -60,7 +52,8 @@ export default async function FilePage({
         <p>Uploaded by: {owner ? owner.name : "Unknown"}</p>
       </div>
 
-      <ChatWidget initialSystemPrompt={hint} />
+      {/* Floating chat only on file page; server will add metadata context */}
+      <ChatWidget fileId={fileId} />
     </div>
   );
 }

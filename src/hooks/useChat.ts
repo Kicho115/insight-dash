@@ -1,10 +1,11 @@
+// src/hooks/useChat.ts
 "use client";
 
 import { useMemo, useState } from "react";
 import { askAi } from "@/services/ai";
 import type { ChatMessage } from "@/lib/helpers/chat";
 
-export function useChat(_initialSystemPrompt?: string) {
+export function useChat(fileId?: string) {
   const initialMessages = useMemo<ChatMessage[]>(
     () => [{ role: "assistant", content: "Hi! How can I help you today?" }],
     []
@@ -29,10 +30,7 @@ export function useChat(_initialSystemPrompt?: string) {
     setSending(true);
 
     try {
- 
-      const payload: ChatMessage[] = [{ role: "user", content: text }];
-
-      const result = await askAi({ messages: payload });
+      const result = await askAi({ messages: next, fileId });
 
       if (result.success) {
         const content = result.data.content ?? "No content.";

@@ -1,3 +1,4 @@
+// src/components/ChatWidget/index.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -6,14 +7,11 @@ import { IoChatbubblesOutline, IoClose, IoSend } from "react-icons/io5";
 import { useChat } from "@/hooks/useChat";
 import type { ChatMessage } from "@/lib/helpers/chat";
 
-type Props = { initialSystemPrompt: string };
+type Props = { fileId?: string };
 
-export default function ChatWidget({ initialSystemPrompt }: Props) {
-  if (!initialSystemPrompt) return null;
-
+export default function ChatWidget({ fileId }: Props) {
   const [open, setOpen] = useState<boolean>(false);
-  const { messages, input, sending, error, canSend, setInput, handleSubmit } =
-    useChat(initialSystemPrompt);
+  const { messages, input, sending, error, canSend, setInput, handleSubmit } = useChat(fileId);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
