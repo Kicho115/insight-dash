@@ -1,15 +1,15 @@
 // src/services/genkit/askAi.ts
-import { ai, model } from "./index";          
+import { ai } from "./index";
 import type { ChatMessage } from "@/lib/helpers/chat";
 
 export interface AskAIInput {
-  messages: ChatMessage[];
-  preamble?: string;
-  temperature?: number;
+    messages: ChatMessage[];
+    preamble?: string;
+    temperature?: number;
 }
 
 export interface AskAIOutput {
-  content: string;
+    content: string;
 }
 
 /**
@@ -17,32 +17,30 @@ export interface AskAIOutput {
  * Serializes messages into a single prompt (no tools, no streaming).
  */
 export async function askAI({
-  messages,
-  preamble,
-  temperature = 0.7,
+    messages,
+    preamble,
+    temperature = 0.7,
 }: AskAIInput): Promise<AskAIOutput> {
-  const parts: string[] = [];
+    const parts: string[] = [];
 
-  if (preamble && preamble.trim().length > 0) {
-    parts.push(preamble.trim());
-  }
+    if (preamble && preamble.trim().length > 0) {
+        parts.push(preamble.trim());
+    }
 
-  for (const m of messages) {
-    const tag = m.role === "assistant" ? "ASSISTANT" : m.role.toUpperCase();
-    parts.push(`${tag}: ${m.content}`);
-  }
+    for (const m of messages) {
+        const tag = m.role === "assistant" ? "ASSISTANT" : m.role.toUpperCase();
+        parts.push(`${tag}: ${m.content}`);
+    }
 
-  parts.push("ASSISTANT:");
-  const prompt = parts.join("\n\n");
+    parts.push("ASSISTANT:");
+    const prompt = parts.join("\n\n");
 
-  const result = await ai.generate({
-    model,                                 
-    prompt,
-    config: { temperature },
-  });
+    const result = await ai.generate({
+        prompt,
+        config: { temperature },
+    });
 
+    const text = (result as { text?: string }).text ?? "";
 
-  const text = (result as { text?: string }).text ?? "";
-
-  return { content: text };
+    return { content: text };
 }
