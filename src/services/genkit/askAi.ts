@@ -1,25 +1,48 @@
-import { ai, model } from "@/services/genkit";
+// src/services/genkit/askAi.ts
+import { ai, model } from "./index";          
 import type { ChatMessage } from "@/lib/helpers/chat";
 
 export interface AskAIInput {
   messages: ChatMessage[];
+  preamble?: string;
+  temperature?: number;
 }
 
+export interface AskAIOutput {
+  content: string;
+}
 
-export async function askAI({ messages }: AskAIInput): Promise<{ content: string }> {
-  const lastUser = [...messages].reverse().find((m) => m.role === "user");
-  const prompt = lastUser?.content?.trim() ?? "";
+/**
+ * Thin Genkit wrapper to generate a response from a chat history.
+ * Serializes messages into a single prompt (no tools, no streaming).
+ */
+export async function askAI({
+  messages,
+  preamble,
+  temperature = 0.7,
+}: AskAIInput): Promise<AskAIOutput> {
+  const parts: string[] = [];
 
-  if (!prompt) {
-    return { content: "Please type a message." };
+  if (preamble && preamble.trim().length > 0) {
+    parts.push(preamble.trim());
   }
 
-  const result = await ai.generate({ model, prompt });
- 
-  const content =
-    typeof result === "string"
-      ? result
-      : (typeof (result as any)?.text === "string" ? (result as any).text : "No content.");
+  for (const m of messages) {
+    const tag = m.role === "assistant" ? "ASSISTANT" : m.role.toUpperCase();
+    parts.push(`${tag}: ${m.content}`);
+  }
 
-  return { content };
+  parts.push("ASSISTANT:");
+  const prompt = parts.join("\n\n");
+
+  const result = await ai.generate({
+    model,                                 
+    prompt,
+    config: { temperature },
+  });
+
+
+  const text = (result as { text?: string }).text ?? "";
+
+  return { content: text };
 }
