@@ -229,7 +229,7 @@
     text-align: left;
     cursor: pointer;
     font-size: 0.9rem;
-    color: #ef4444;
+    color: #000000;
 }
 
 .menuItem:hover {
@@ -272,8 +272,39 @@
     cursor: pointer;
 }
 
+/* Specific colors for actions */
+.renameItem:hover {
+    background-color: #f3f4f6;
+} /* Light gray hover */
+.downloadItem:hover {
+    background-color: #f3f4f6;
+} /* Light gray hover */
+.deleteItem {
+    color: #ef4444;
+} /* Red for delete */
+.deleteItem:hover {
+    background-color: #fef2f2;
+} /* Light red hover */
+
+/* Basic spinner for download indication */
+.downloadingSpinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #9ca3af; /* gray-400 */
+    border-top-color: #3b82f6; /* blue-500 */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
 @keyframes pulse {
     50% {
         opacity: 0.5;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
