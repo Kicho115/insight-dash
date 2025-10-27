@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import styles from "./styles.module.css";
-import { Modal } from "@/components/Modal";
+import { Modal } from "@/components/modal";
 import { IoPencilOutline } from "react-icons/io5";
 
 interface RenameFileModalProps {

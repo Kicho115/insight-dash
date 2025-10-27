@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import styles from "./styles.module.css";
 
 // Component imports
-import { Modal } from "@/components/Modal";
+import { Modal } from "@/components/modal";
 import { PasswordResetModal } from "@/components/passwordResetModal";
 import { LoadingSpinner } from "@/components/loading";
 
