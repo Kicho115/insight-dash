@@ -17,9 +17,9 @@ export async function PATCH(
         const { fileId } = await params;
         const body = await request.json();
 
-        const { summary, headers, status } = body;
+        const { metadata, status } = body;
 
-        await updateFileMetadata(fileId, { summary, headers, status });
+        await updateFileMetadata(fileId, { metadata, status });
 
         return NextResponse.json({ success: true });
     } catch (error) {

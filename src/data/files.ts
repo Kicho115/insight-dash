@@ -4,7 +4,12 @@ import { dbAdmin } from "@/services/firebase/admin";
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { File as FileMetadata, FileStatus } from "@/types/user";
+import {
+    File as FileMetadata,
+    FileStatus,
+    ExcelMetadata,
+    CsvMetadata,
+} from "@/types/file";
 
 interface PrepareUploadOptions {
     fileName: string;
@@ -170,44 +175,41 @@ export async function getFileById(
 /**
  * Updates the summary and headers of a file after processing.
  * @param fileId - The ID of the file to update.
- * @param summary - The generated summary of the file.
- * @param headers - The column headers extracted from the file.
+ * @param metadata - The metadata (summary, headers, sheets) extracted from the file.
  * @param status - The processing status of the file.
  */
 export async function updateFileMetadata(
     fileId: string,
     {
-        summary,
-        headers,
+        metadata,
         status,
     }: {
-        summary?: string;
-        headers?: string[];
+        metadata?: ExcelMetadata | CsvMetadata;
         status?: FileStatus;
     }
 ): Promise<void> {
-    const fileDocRef = dbAdmin.collection("files").doc(fileId);
-    const fileDoc = await fileDocRef.get();
+    if (metadata === undefined && status === undefined) {
+        throw new Error("No metadata or status provided for update.");
+    }
 
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+
+    const fileDoc = await fileDocRef.get();
     if (!fileDoc.exists) {
         throw new Error("File not found.");
     }
 
+    // Build the update object
     const updateData: {
-        summary?: string;
-        headers?: string[];
+        metadata?: ExcelMetadata | CsvMetadata;
         status?: FileStatus;
         updatedAt: FirebaseFirestore.FieldValue;
     } = {
         updatedAt: FieldValue.serverTimestamp(),
     };
 
-    if (summary !== undefined) {
-        updateData.summary = summary;
-    }
-
-    if (headers !== undefined) {
-        updateData.headers = headers;
+    if (metadata !== undefined) {
+        updateData.metadata = metadata;
     }
 
     if (status !== undefined) {

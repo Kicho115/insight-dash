@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation"; // Use for re-fetching server data
 import styles from "./styles.module.css";
-import { File as FileMetadata, FileStatus } from "@/types/user";
+import { File as FileMetadata, FileStatus } from "@/types/file";
 import { ConfirmationModal } from "@/components/confirmationModal";
 import { deleteFile } from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";

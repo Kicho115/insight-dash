@@ -1,5 +1,5 @@
 import styles from "./styles.module.css";
-import { FileStatus } from "@/types/user";
+import { FileStatus } from "@/types/file";
 
 interface StatusBadgeProps {
     status: FileStatus;

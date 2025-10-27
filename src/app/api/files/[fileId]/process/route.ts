@@ -36,8 +36,9 @@ export async function POST(
         await updateFileMetadata(fileId, { status: "Processing" });
 
         try {
-            // Parse the file to extract column headers
-            const columnHeaders = await parseFile(filePath);
+            // Parse the file to extract metadata
+            const metadata = await parseFile(filePath);
+            const columnHeaders = metadata.headers;
 
             // Call the AI flow to generate a summary
             const { summary } = await summarizeFileFlow({
@@ -47,8 +48,10 @@ export async function POST(
 
             // Update the file document in Firestore with the summary and headers
             await updateFileMetadata(fileId, {
-                summary,
-                headers: columnHeaders,
+                metadata: {
+                    ...metadata,
+                    summary,
+                },
                 status: "Ready",
             });
 
