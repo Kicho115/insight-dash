@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./styles.module.css";
-import { Modal } from "@/components/modal"; // Your generic modal wrapper
+import { Modal } from "@/components/modal";
 import { IoWarningOutline } from "react-icons/io5";
 
 interface ConfirmationModalProps {
