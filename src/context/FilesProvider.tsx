@@ -16,7 +16,7 @@ import {
     Timestamp,
 } from "firebase/firestore";
 import { db } from "@/services/firebase/config";
-import { File as FileMetadata, FileStatus } from "@/types/user";
+import { File as FileMetadata, FileStatus } from "@/types/file";
 import { useAuth } from "./AuthProvider";
 
 interface FilesContextType {

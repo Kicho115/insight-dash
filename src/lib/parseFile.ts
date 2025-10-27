@@ -1,14 +1,19 @@
 "use server";
 
 import { getFileDownloadURL } from "@/data/storage/files";
-import { getCsvHeaders, getXlsxHeaders } from "@/lib/helpers/parseFiles";
+import { getCsvMetadata, getExcelMetadata } from "@/lib/helpers/parseFiles";
+
+// Types
+import { ExcelMetadata, CsvMetadata } from "@/types/file";
 
 /**
- * Reads a file from Firebase Storage and extracts its column headers.
+ * Reads a file from Firebase Storage and extracts its metadata.
  * @param filePath - The path to the file in Firebase Storage.
- * @returns A promise that resolves to an array of column header strings.
+ * @returns A promise that resolves to an object containing the file's metadata.
  */
-export async function parseFile(filePath: string): Promise<string[]> {
+export async function parseFile(
+    filePath: string
+): Promise<CsvMetadata | ExcelMetadata> {
     try {
         const downloadUrl = await getFileDownloadURL(filePath);
         const fileExtension = filePath.split(".").pop()?.toLowerCase();
@@ -27,12 +32,12 @@ export async function parseFile(filePath: string): Promise<string[]> {
 
         if (fileExtension === "csv") {
             const csvData = await response.text();
-            const headers = getCsvHeaders(csvData);
-            return headers;
+            const metadata = getCsvMetadata(csvData);
+            return metadata;
         } else if (fileExtension === "xlsx" || fileExtension === "xls") {
             const arrayBuffer = await response.arrayBuffer();
-            const headers = getXlsxHeaders(arrayBuffer);
-            return headers;
+            const metadata = getExcelMetadata(arrayBuffer);
+            return metadata;
         } else {
             throw new Error(
                 "Unsupported file type. Only CSV and XLSX are supported."

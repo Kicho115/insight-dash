@@ -2,7 +2,8 @@
  * @fileoverview Client-side service for file-related operations.
  */
 
-import { AppUser, File as FileMetadata } from "@/types/user";
+import { File as FileMetadata } from "@/types/file";
+import { AppUser } from "@/types/user";
 
 interface UploadFileOptions {
     file: File;
