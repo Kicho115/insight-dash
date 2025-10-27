@@ -155,3 +155,54 @@ export const deleteFile = async (
         return { success: false, error: error as Error };
     }
 };
+
+/**
+ * @function renameFile
+ * @description Calls the secure API route to rename a file.
+ * @param fileId The ID of the file to rename.
+ * @param newDisplayName The new display name.
+ * @returns Promise indicating success or failure.
+ */
+export const renameFile = async (
+    fileId: string,
+    newDisplayName: string
+): Promise<{ success: boolean; error?: Error }> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ displayName: newDisplayName }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to rename file.");
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Error renaming file:", error);
+        return { success: false, error: error as Error };
+    }
+};
+
+/**
+ * @function getDownloadLink
+ * @description Calls the secure API route to get a temporary download link.
+ * @param fileId The ID of the file to download.
+ * @returns Promise resolving to the download URL string, or null on error.
+ */
+export const getDownloadLink = async (
+    fileId: string
+): Promise<string | null> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}/download`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to get download link.");
+        }
+        const { downloadUrl } = await response.json();
+        return downloadUrl;
+    } catch (error) {
+        console.error("Error getting download link:", error);
+        return null;
+    }
+};
