@@ -13,7 +13,7 @@ import { FilesProvider } from "@/context/FilesProvider";
 
 // App chrome
 import { Sidebar } from "@/components/sidebar";
-import { Modal } from "@/components/Modal";
+import { Modal } from "@/components/modal";
 import { UploadForm } from "@/components/uploadForm";
 
 // Keep this small controller separate so only it re-renders on modal open/close
