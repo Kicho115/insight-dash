@@ -216,3 +216,78 @@ export async function updateFileMetadata(
 
     await fileDocRef.update(updateData);
 }
+
+/**
+ * Updates the display name of a file.
+ * Verifies that the user requesting the change is the creator.
+ * @param fileId - The ID of the file to update.
+ * @param userId - The UID of the user making the request.
+ * @param newDisplayName - The new display name for the file.
+ * @throws Will throw error if file not found or permission denied.
+ */
+export async function updateFileName(
+    fileId: string,
+    userId: string,
+    newDisplayName: string
+): Promise<void> {
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+    const fileDoc = await fileDocRef.get();
+
+    if (!fileDoc.exists) {
+        throw new Error("File not found.");
+    }
+
+    const fileData = fileDoc.data();
+    // Security Check: Only allow the creator to rename
+    if (fileData?.creatorId !== userId) {
+        throw new Error("User does not have permission to rename this file.");
+    }
+
+    // Update only the displayName and updatedAt timestamp
+    await fileDocRef.update({
+        displayName: newDisplayName,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+}
+
+/**
+ * Generates a secure, short-lived signed URL for downloading a file.
+ * Verifies that the user requesting the download has permission.
+ * @param fileId - The ID of the file to download.
+ * @param userId - The UID of the user making the request.
+ * @returns {Promise<string>} The signed download URL.
+ * @throws Will throw error if file not found, path is missing, or permission denied.
+ */
+export async function getDownloadUrl(
+    fileId: string,
+    userId: string
+): Promise<string> {
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+    const fileDoc = await fileDocRef.get();
+
+    if (!fileDoc.exists) {
+        throw new Error("File not found.");
+    }
+
+    const fileData = fileDoc.data();
+    if (!fileData || !fileData.path) {
+        throw new Error("File path is missing in metadata.");
+    }
+
+    // Security Check: Allow download if public or user is creator
+    // (Expand this later based on your 'permissions' array if needed)
+    const hasPermission = fileData.isPublic || fileData.creatorId === userId;
+    if (!hasPermission) {
+        throw new Error("User does not have permission to download this file.");
+    }
+
+    // Generate signed URL (valid for 15 minutes by default)
+    const bucket = getStorage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
+    const file = bucket.file(fileData.path);
+    const [url] = await file.getSignedUrl({
+        action: "read",
+        expires: Date.now() + 15 * 60 * 1000, // 15 minutes validity
+    });
+
+    return url;
+}

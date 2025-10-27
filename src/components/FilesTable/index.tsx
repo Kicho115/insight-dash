@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"; // Use for re-fetching server data
 import styles from "./styles.module.css";
 import { File as FileMetadata, FileStatus } from "@/types/user";
 import { ConfirmationModal } from "@/components/confirmationModal";
-import { deleteFile } from "@/services/files";
+import { RenameFileModal } from "@/components/RenameFileModal";
+import { deleteFile, renameFile, getDownloadLink } from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";
 import { useFiles } from "@/context/FilesProvider";
 import {
@@ -14,6 +15,8 @@ import {
     IoGlobeOutline,
     IoEllipsisHorizontal,
     IoTrashOutline,
+    IoPencilOutline,
+    IoDownloadOutline,
     IoInformationCircleOutline,
 } from "react-icons/io5";
 
@@ -71,8 +74,18 @@ export const FilesTable = () => {
     const { user } = useAuth();
 
     const { files, isLoading, error } = useFiles();
+
+    // Deletion State
     const [isDeleting, setIsDeleting] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<FileMetadata | null>(null);
+
+    // Rename State
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [fileToRename, setFileToRename] = useState<FileMetadata | null>(null);
+
+    // Download State
+    const [isDownloading, setIsDownloading] = useState<string | null>(null);
+
     const [activeActionMenu, setActiveActionMenu] = useState<string | null>(
         null
     );
@@ -95,6 +108,7 @@ export const FilesTable = () => {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // --- Delete Handlers ---
     const handleOpenDeleteModal = (file: FileMetadata) => {
         setFileToDelete(file);
         setActiveActionMenu(null);
@@ -120,6 +134,50 @@ export const FilesTable = () => {
 
         setIsDeleting(false);
         setFileToDelete(null);
+    };
+
+    // --- Rename Handlers ---
+    const handleOpenRenameModal = (file: FileMetadata) => {
+        setFileToRename(file);
+        setActiveActionMenu(null);
+    };
+    const handleConfirmRename = async (newName: string) => {
+        if (!fileToRename) return;
+        setIsRenaming(true);
+        try {
+            const result = await renameFile(fileToRename.id, newName);
+            if (!result.success) {
+                throw result.error || new Error("Rename failed");
+            }
+            // Success! onSnapshot will update the table. Close modal.
+            setFileToRename(null);
+        } catch (err) {
+            console.error("Rename failed:", err);
+            // Re-throw to be caught by the modal's error handling
+            throw err;
+        } finally {
+            setIsRenaming(false);
+        }
+    };
+
+    // --- Download Handler ---
+    const handleDownload = async (file: FileMetadata) => {
+        setActiveActionMenu(null);
+        setIsDownloading(file.id);
+        try {
+            const downloadUrl = await getDownloadLink(file.id);
+            if (downloadUrl) {
+                // Open the download link in a new tab
+                window.open(downloadUrl, "_blank");
+            } else {
+                alert("Could not get download link. Please try again.");
+            }
+        } catch (err) {
+            console.log("Error al descargar el archivo: " + err);
+            alert("Error preparing download. Please try again.");
+        } finally {
+            setIsDownloading(null);
+        }
     };
 
     // Use the isLoading state from the context for the initial load
@@ -245,16 +303,29 @@ export const FilesTable = () => {
                                                         styles.actionsButton
                                                     }
                                                     onClick={(e) => {
-                                                        e.stopPropagation(); // Prevent fileRow click
                                                         setActiveActionMenu(
                                                             activeActionMenu ===
                                                                 file.id
                                                                 ? null
                                                                 : file.id
                                                         );
+                                                        e.stopPropagation();
                                                     }}
+                                                    disabled={
+                                                        isDownloading ===
+                                                        file.id
+                                                    } // Disable while downloading this file
                                                 >
-                                                    <IoEllipsisHorizontal />
+                                                    {isDownloading ===
+                                                    file.id ? (
+                                                        <span
+                                                            className={
+                                                                styles.downloadingSpinner
+                                                            }
+                                                        ></span> // Basic spinner
+                                                    ) : (
+                                                        <IoEllipsisHorizontal />
+                                                    )}
                                                 </button>
                                                 {activeActionMenu ===
                                                     file.id && (
@@ -264,15 +335,40 @@ export const FilesTable = () => {
                                                         }
                                                         ref={menuRef}
                                                     >
+                                                        {/* Rename Button */}
                                                         <button
-                                                            className={
-                                                                styles.menuItem
-                                                            }
+                                                            className={`${styles.menuItem} ${styles.renameItem}`}
                                                             onClick={(e) => {
-                                                                e.stopPropagation(); // Prevent fileRow click
+                                                                handleOpenRenameModal(
+                                                                    file
+                                                                );
+                                                                e.stopPropagation();
+                                                            }}
+                                                        >
+                                                            <IoPencilOutline />
+                                                            Rename
+                                                        </button>
+                                                        {/* Download Button */}
+                                                        <button
+                                                            className={`${styles.menuItem} ${styles.downloadItem}`}
+                                                            onClick={(e) => {
+                                                                handleDownload(
+                                                                    file
+                                                                );
+                                                                e.stopPropagation();
+                                                            }}
+                                                        >
+                                                            <IoDownloadOutline />
+                                                            Download
+                                                        </button>
+                                                        {/* Delete Button */}
+                                                        <button
+                                                            className={`${styles.menuItem} ${styles.deleteItem}`}
+                                                            onClick={(e) => {
                                                                 handleOpenDeleteModal(
                                                                     file
                                                                 );
+                                                                e.stopPropagation();
                                                             }}
                                                         >
                                                             <IoTrashOutline />
@@ -298,6 +394,13 @@ export const FilesTable = () => {
                 message={`Are you sure you want to permanently delete "${fileToDelete?.displayName}"? This action cannot be undone.`}
                 confirmText="Delete"
                 isLoading={isDeleting}
+            />
+            <RenameFileModal
+                isOpen={!!fileToRename}
+                onClose={() => setFileToRename(null)}
+                onRename={handleConfirmRename}
+                currentName={fileToRename?.displayName || ""}
+                isRenaming={isRenaming}
             />
         </>
     );
