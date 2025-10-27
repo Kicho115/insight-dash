@@ -56,7 +56,23 @@ export default async function FilePage({
                 <p>Size: {formatBytes(file.size)}</p>
                 <p>Created: {formatFirestoreDate(file.createdAt)}</p>
                 <p>Uploaded by: {owner ? owner.name : "Unknown"}</p>
-                <p>Metadata: {JSON.stringify(file.metadata)}</p>
+                {file.metadata && "sheets" in file.metadata && (
+                    <>
+                        <p>Number of sheets: {file.metadata.sheets.length}</p>
+                        <div className={styles.excelInfo}>
+                            <h3>Sheets Information</h3>
+                            {file.metadata.sheets.map((sheet, index) => (
+                                <div key={index} className={styles.sheetInfo}>
+                                    <p>
+                                        <strong>{sheet.name}</strong>
+                                    </p>
+                                    <p>Rows: {sheet.numberOfRows}</p>
+                                    <p>Columns: {sheet.numberOfColumns}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Floating chat only on file page; server will add metadata context */}
