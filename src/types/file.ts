@@ -37,4 +37,5 @@ export interface SheetInfo {
 export type CsvMetadata = {
     summary: string;
     headers: string[];
+    numberOfRows: number;
 };

@@ -11,12 +11,14 @@ const MAX_ROWS_TO_CHECK = 10;
 
 export async function getCsvMetadata(csvData: string): Promise<CsvMetadata> {
     try {
-        const rows = csvData.split("\n").slice(0, MAX_ROWS_TO_CHECK);
-        const headers = await getHeadersFlow(rows);
+        const rows = csvData.split("\n");
+        const numberOfRows = rows.length;
+        const headers = await getHeadersFlow(rows.slice(0, MAX_ROWS_TO_CHECK));
 
         return {
             summary: "",
             headers,
+            numberOfRows,
         };
     } catch (error) {
         console.error("Error getting CSV headers:", error);
@@ -117,8 +119,13 @@ export async function getExcelMetadata(
 
         const headers = await getHeadersFlow(cleanedRows);
 
-        if (!headers || headers.length === 0) {
-            throw new Error("Could not detect headers in the Excel file");
+        // If the headers is an empty array, the file is not in a valid format
+        if (!headers) {
+            throw new Error("Error generating headers from genkit flow");
+        } else if (headers.length === 0) {
+            headers.push(
+                "There are no headers in this file. This file is not in a valid format."
+            );
         }
 
         const sheets: SheetInfo[] = workbook.SheetNames.map((sheetName) => {

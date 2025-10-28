@@ -19,12 +19,7 @@ export async function parseFile(
         const fileExtension = filePath.split(".").pop()?.toLowerCase();
 
         // If the file is not XLSX or XLS, download only the first 1KB to read headers
-        const response = await fetch(downloadUrl, {
-            headers:
-                fileExtension === "xlsx" || fileExtension === "xls"
-                    ? {}
-                    : { Range: "bytes=0-1023" },
-        });
+        const response = await fetch(downloadUrl);
 
         if (!response.ok && response.status !== 206) {
             throw new Error(`HTTP error: ${response.status}`);
