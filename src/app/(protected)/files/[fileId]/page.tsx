@@ -56,7 +56,7 @@ export default async function FilePage({
                 <p>Size: {formatBytes(file.size)}</p>
                 <p>Created: {formatFirestoreDate(file.createdAt)}</p>
                 <p>Uploaded by: {owner ? owner.name : "Unknown"}</p>
-                {file.metadata && "sheets" in file.metadata && (
+                {file.metadata && "sheets" in file.metadata ? (
                     <>
                         <p>Number of sheets: {file.metadata.sheets.length}</p>
                         <div className={styles.excelInfo}>
@@ -72,6 +72,10 @@ export default async function FilePage({
                             ))}
                         </div>
                     </>
+                ) : (
+                    <p>
+                        Number of rows: {file.metadata?.numberOfRows ?? "N/A"}
+                    </p>
                 )}
             </div>
 
