@@ -17,8 +17,11 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ fileId: string }> }
 ) {
+    let fileId = "";
     try {
-        const { fileId } = await params;
+        const paramsResolved = await params;
+        fileId = paramsResolved.fileId;
+
         const body = await request.json();
         const { filePath, fileName } = body;
 
@@ -33,8 +36,9 @@ export async function POST(
         await updateFileMetadata(fileId, { status: "Processing" });
 
         try {
-            // Parse the file to extract column headers
-            const columnHeaders = await parseFile(filePath);
+            // Parse the file to extract metadata
+            const metadata = await parseFile(filePath);
+            const columnHeaders = metadata.headers;
 
             // Call the AI flow to generate a summary
             const { summary } = await summarizeFileFlow({
@@ -44,8 +48,10 @@ export async function POST(
 
             // Update the file document in Firestore with the summary and headers
             await updateFileMetadata(fileId, {
-                summary,
-                headers: columnHeaders,
+                metadata: {
+                    ...metadata,
+                    summary,
+                },
                 status: "Ready",
             });
 
@@ -57,8 +63,8 @@ export async function POST(
         } catch (processingError) {
             console.error("Error processing file:", processingError);
 
-            // Mark as Not ready if processing fails
-            await updateFileMetadata(fileId, { status: "Not ready" });
+            // Mark as Error if processing fails
+            await updateFileMetadata(fileId, { status: "Error" });
 
             return NextResponse.json(
                 { error: "Failed to process file." },
@@ -67,6 +73,15 @@ export async function POST(
         }
     } catch (error) {
         console.error("Error in process file API route:", error);
+
+        if (fileId) {
+            try {
+                await updateFileMetadata(fileId, { status: "Error" });
+            } catch (updateErr) {
+                console.error("Failed to set error status:", updateErr);
+            }
+        }
+
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

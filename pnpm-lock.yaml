@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@genkit-ai/google-genai':
-        specifier: ^1.21.0
+        specifier: ^1.20.0
         version: 1.21.0(genkit@1.21.0(@google-cloud/firestore@7.11.6)(firebase-admin@13.5.0)(firebase@12.4.0))
       firebase:
-        specifier: ^12.4.0
+        specifier: ^12.1.0
         version: 12.4.0
       firebase-admin:
         specifier: ^13.5.0

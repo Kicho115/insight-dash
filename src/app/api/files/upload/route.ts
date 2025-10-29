@@ -4,7 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { requireServerAuth } from "@/lib/serverAuth";
-import { prepareFileUpload } from "@/data/files"; // <-- Importamos la "receta"
+import { prepareFileUpload } from "@/data/files";
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -27,9 +27,12 @@ export async function POST(request: Request) {
             );
         }
 
-        const result = await prepareFileUpload({ ...body, user });
+        const { signedUrl, fileId, filePath } = await prepareFileUpload({
+            ...body,
+            user,
+        });
 
-        return NextResponse.json(result);
+        return NextResponse.json({ signedUrl, fileId, filePath });
     } catch (error) {
         console.error("Error in prepare-upload API route:", error);
         if ((error as Error).message === "Authentication required") {

@@ -1,53 +1,57 @@
+// src/app/(protected)/layout.tsx
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthProvider";
 import styles from "./layout.module.css";
 
-// Import Providers and Components
+// Providers & UI
 import { UIProvider, useUI } from "@/context/UIProvider";
 import { FilesProvider } from "@/context/FilesProvider";
+
+// App chrome
 import { Sidebar } from "@/components/sidebar";
 import { Modal } from "@/components/modal";
 import { UploadForm } from "@/components/uploadForm";
 
-// This small component consumes the UI context to render the modal.
-// This is a performance optimization: only this component re-renders when the modal opens/closes.
-const AppModalController = () => {
+// Keep this small controller separate so only it re-renders on modal open/close
+function AppModalController() {
     const { isUploadModalOpen, closeUploadModal } = useUI();
     return (
         <Modal isOpen={isUploadModalOpen} onClose={closeUploadModal}>
-            {/* Pass the close function to the form so it can close itself on success */}
             <UploadForm onUploadSuccess={closeUploadModal} />
         </Modal>
     );
-};
+}
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
     const { user, loading } = useAuth();
     const router = useRouter();
 
+    // Auth gate
     useEffect(() => {
         if (!loading && !user) {
             router.push("/sign-in");
         }
-    }, [user, loading, router]);
+    }, [loading, user, router]);
 
     if (loading || !user) {
-        return <div>Verifying session...</div>; // Or a proper spinner component
+        return <div>Verifying session...</div>;
     }
 
-    // The main layout now wraps everything in the necessary providers.
+    // Main protected shell
     return (
         <UIProvider>
             <FilesProvider>
                 <div className={styles.container}>
                     <Sidebar />
                     <main className={styles.content}>{children}</main>
-                    {/* The Modal's visibility is now controlled by the UIContext */}
                     <AppModalController />
                 </div>
+
+                {/* Out-of-flow overlay, shown above the app without affecting layout */}
             </FilesProvider>
         </UIProvider>
     );

@@ -2,7 +2,8 @@
  * @fileoverview Client-side service for file-related operations.
  */
 
-import { AppUser, File as FileMetadata } from "@/types/user";
+import { File as FileMetadata } from "@/types/file";
+import { AppUser } from "@/types/user";
 
 interface UploadFileOptions {
     file: File;
@@ -63,8 +64,8 @@ export const uploadFile = async ({
             throw new Error("File upload to storage failed.");
         }
 
-        // Step 3: Process the file on the server (extract headers and generate summary)
-        const processResponse = await fetch(`/api/files/${fileId}/process`, {
+        // Step 3: Process the file on the server (extract headers and generate summary) without awaiting
+        fetch(`/api/files/${fileId}/process`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -73,13 +74,26 @@ export const uploadFile = async ({
                 filePath,
                 fileName: displayName || file.name,
             }),
+        }).catch((err) => {
+            // Log errors for the background process, but don't fail the main upload flow
+            console.error(
+                `Background processing trigger failed for ${fileId}:`,
+                err
+            );
+
+            // If upload fails, try to mark the file as Error if metadata was created
+            if (fileId) {
+                fetch(`/api/files/${fileId}/process/fail`, {
+                    method: "POST",
+                }).catch((e) =>
+                    console.error("Failed to mark file as error:", e)
+                ); // Optional: create a route to quickly mark as error
+            }
+
+            return { success: false, error: err as Error };
         });
 
-        if (!processResponse.ok) {
-            console.error("File processing failed, but upload succeeded.");
-            // The file is uploaded but not processed
-        }
-
+        // Upload is considered successful once the file is in Storage.
         return { success: true };
     } catch (error) {
         console.error("Error during file upload process:", error);
@@ -139,5 +153,56 @@ export const deleteFile = async (
     } catch (error) {
         console.error("Error deleting file:", error);
         return { success: false, error: error as Error };
+    }
+};
+
+/**
+ * @function renameFile
+ * @description Calls the secure API route to rename a file.
+ * @param fileId The ID of the file to rename.
+ * @param newDisplayName The new display name.
+ * @returns Promise indicating success or failure.
+ */
+export const renameFile = async (
+    fileId: string,
+    newDisplayName: string
+): Promise<{ success: boolean; error?: Error }> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ displayName: newDisplayName }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to rename file.");
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Error renaming file:", error);
+        return { success: false, error: error as Error };
+    }
+};
+
+/**
+ * @function getDownloadLink
+ * @description Calls the secure API route to get a temporary download link.
+ * @param fileId The ID of the file to download.
+ * @returns Promise resolving to the download URL string, or null on error.
+ */
+export const getDownloadLink = async (
+    fileId: string
+): Promise<string | null> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}/download`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to get download link.");
+        }
+        const { downloadUrl } = await response.json();
+        return downloadUrl;
+    } catch (error) {
+        console.error("Error getting download link:", error);
+        return null;
     }
 };
