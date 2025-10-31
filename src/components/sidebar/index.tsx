@@ -102,33 +102,37 @@ export const Sidebar = () => {
                     </div>
 
                     <hr className={styles.divider} />
-                    {menuItems.map((item) => (
-                        <Link
-                            href={item.path}
-                            key={item.name}
-                            // Apply 'active' class if the current path matches the item's path
-                            className={`${styles.item} ${
-                                (
-                                    item.path === "/home" ||
-                                    item.path === "/settings" ||
-                                    item.path === "/team"
-                                        ? pathname === item.path
-                                        : pathname.startsWith(item.path)
-                                )
-                                    ? styles.active
-                                    : ""
-                            }`}
-                            onClick={() => {
-                                // Close sidebar on mobile after clicking a link
-                                if (window.innerWidth <= 768) {
-                                    setIsCollapsed(true);
-                                }
-                            }}
-                        >
-                            {item.icon}
-                            {!isCollapsed && <p>{item.name}</p>}
-                        </Link>
-                    ))}
+                    {menuItems.map((item) => {
+                        // Use startsWith to handle nested routes like /team/[teamId]
+                        const isActive = pathname.startsWith(item.path);
+                        // Specific check for /home to avoid it matching all routes
+                        const isHomeActive =
+                            item.path === "/home" && pathname === "/home";
+
+                        return (
+                            <Link
+                                href={item.path}
+                                key={item.name}
+                                className={`${styles.item} ${
+                                    (
+                                        item.path === "/home"
+                                            ? isHomeActive
+                                            : isActive
+                                    )
+                                        ? styles.active
+                                        : ""
+                                }`}
+                                onClick={() => {
+                                    if (window.innerWidth <= 768) {
+                                        setIsCollapsed(true);
+                                    }
+                                }}
+                            >
+                                {item.icon}
+                                {!isCollapsed && <p>{item.name}</p>}
+                            </Link>
+                        );
+                    })}
                     <button
                         onClick={() => {
                             openUploadModal();
