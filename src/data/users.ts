@@ -1,6 +1,7 @@
 import "server-only"; // Guarantees this code never runs on the client
 import { dbAdmin } from "@/services/firebase/admin";
 import { AppUser } from "@/types/user";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 /**
  * Creates or updates a user document in Firestore using the Admin SDK.
@@ -20,6 +21,7 @@ export async function createOrUpdateUser(
             email: userData.email,
             name: userData.name,
             createdAt: new Date(),
+            updatedAt: new Date(),
             teams: [],
             position: "",
         };
@@ -42,12 +44,57 @@ export async function doesEmailExist(email: string): Promise<boolean> {
 /**
  * Fetches a user profile by their UID from the server side.
  * @param uid - The user's unique ID.
- * @returns {Promise<AppUser | null>} The user's profile data.
+ * @returns {Promise<AppUser>} The user's profile data.
+ * @throws Will throw an error if the user is not found.
  */
-export async function getUserById(uid: string): Promise<AppUser | null> {
+export async function getUserById(uid: string): Promise<AppUser> {
     const userDoc = await dbAdmin.collection("users").doc(uid).get();
     if (!userDoc.exists) {
-        return null;
+        throw new Error("User not found.");
     }
-    return userDoc.data() as AppUser;
+
+    const data = userDoc.data();
+    if (!data) {
+        throw new Error("User data is empty."); // Should not happen if exists, but good check
+    }
+
+    // Defensively check if the timestamp exists and is a valid Timestamp object.
+    // If not, provide a sensible fallback (like the current date).
+    const createdAt =
+        data.createdAt && data.createdAt instanceof Timestamp
+            ? data.createdAt.toDate()
+            : new Date(); // Fallback for missing createdAt
+
+    const updatedAt =
+        data.updatedAt && data.updatedAt instanceof Timestamp
+            ? data.updatedAt.toDate()
+            : createdAt; // Fallback to createdAt date (or new Date())
+
+    return {
+        ...(data as Omit<AppUser, "createdAt" | "updatedAt">),
+        id: userDoc.id,
+        createdAt,
+        updatedAt,
+    };
+}
+
+/**
+ * Updates the display name for a given user.
+ * @param uid - The user's unique ID.
+ * @param newName - The new display name.
+ * @throws Will throw an error if the name is invalid or the update fails.
+ */
+export async function updateUserName(
+    uid: string,
+    newName: string
+): Promise<void> {
+    if (!newName || newName.trim().length === 0) {
+        throw new Error("Name cannot be empty.");
+    }
+
+    const userRef = dbAdmin.collection("users").doc(uid);
+    await userRef.update({
+        name: newName.trim(),
+        updatedAt: FieldValue.serverTimestamp(),
+    });
 }
