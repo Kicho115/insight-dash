@@ -22,7 +22,6 @@ export async function createOrUpdateUser(
             name: userData.name,
             createdAt: new Date(),
             updatedAt: new Date(),
-            teams: [],
             position: "",
         };
         await userRef.set(newUser, { merge: true });
@@ -97,4 +96,27 @@ export async function updateUserName(
         name: newName.trim(),
         updatedAt: FieldValue.serverTimestamp(),
     });
+}
+
+/**
+ * Finds a user's ID and name by their email address.
+ * This is crucial for sending invitations.
+ * @param email - The email to search for.
+ * @returns {Promise<{ id: string, name: string } | null>} User details or null if not found.
+ */
+export async function findUserByEmail(
+    email: string
+): Promise<{ id: string; name: string } | null> {
+    const usersRef = dbAdmin.collection("users");
+    const snapshot = await usersRef.where("email", "==", email).limit(1).get();
+
+    if (snapshot.empty) {
+        return null;
+    }
+
+    const userData = snapshot.docs[0].data();
+    return {
+        id: snapshot.docs[0].id,
+        name: userData.name || "N/A",
+    };
 }

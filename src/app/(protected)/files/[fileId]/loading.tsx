@@ -1,4 +1,3 @@
-import styles from "./styles.module.css";
 import { LoadingSpinner } from "@/components/loading";
 
 /**
