@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthProvider";
 import { useUI } from "@/context/UIProvider";
 import { signOutUser } from "@/services/firebase/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     IoPersonCircleSharp,
     IoFolderOpen,
@@ -30,9 +30,18 @@ export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
     // Start collapsed on mobile, expanded on desktop
-    const [isCollapsed, setIsCollapsed] = useState(
-        typeof window !== "undefined" ? window.innerWidth <= 768 : false
-    );
+    const [isCollapsed, setIsCollapsed] = useState(true);
+
+    useEffect(() => {
+        const checkSize = () => {
+            setIsCollapsed(window.innerWidth <= 768);
+        };
+        // Check size on mount
+        checkSize();
+        // Optional: Add listener for window resize
+        window.addEventListener("resize", checkSize);
+        return () => window.removeEventListener("resize", checkSize);
+    }, []);
 
     const handleLogout = async () => {
         const { error } = await signOutUser();
@@ -99,7 +108,15 @@ export const Sidebar = () => {
                             key={item.name}
                             // Apply 'active' class if the current path matches the item's path
                             className={`${styles.item} ${
-                                pathname === item.path ? styles.active : ""
+                                (
+                                    item.path === "/home" ||
+                                    item.path === "/settings" ||
+                                    item.path === "/team"
+                                        ? pathname === item.path
+                                        : pathname.startsWith(item.path)
+                                )
+                                    ? styles.active
+                                    : ""
                             }`}
                             onClick={() => {
                                 // Close sidebar on mobile after clicking a link

@@ -3,6 +3,7 @@ export type AppUser = {
     name: string;
     email: string;
     createdAt: Date;
+    updatedAt: Date;
     teams: Team[];
     position: string;
 };
