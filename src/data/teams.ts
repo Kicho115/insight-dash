@@ -123,3 +123,35 @@ export async function removeMemberFromTeam(
         memberIds: FieldValue.arrayRemove(memberToRemove.userId),
     });
 }
+
+/**
+ * Fetches a single team by its ID and verifies the user is a member.
+ * @param teamId - The ID of the team to fetch.
+ * @param userId - The UID of the user making the request.
+ * @returns {Promise<Team>} The team data.
+ * @throws Will throw an error if the team is not found or the user is not a member.
+ */
+export async function getTeamById(
+    teamId: string,
+    userId: string
+): Promise<Team> {
+    const teamDocRef = dbAdmin.collection("teams").doc(teamId);
+    const teamDoc = await teamDocRef.get();
+
+    if (!teamDoc.exists) {
+        throw new Error("Team not found.");
+    }
+
+    const teamData = teamDoc.data() as Team;
+
+    // Security Check: Verify the user is in the denormalized memberIds array.
+    if (!teamData.memberIds || !teamData.memberIds.includes(userId)) {
+        throw new Error("Access denied. You are not a member of this team.");
+    }
+
+    return {
+        ...teamData,
+        id: teamDoc.id,
+        createdAt: teamData.createdAt,
+    };
+}

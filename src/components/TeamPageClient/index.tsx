@@ -7,6 +7,7 @@ import { AppUser, Team } from "@/types/user";
 import { createTeam } from "@/services/teams";
 import { Modal } from "@/components/modal";
 import { IoPeopleOutline, IoAdd } from "react-icons/io5";
+import Link from "next/link";
 
 // A simple modal component for creating a new team
 interface CreateTeamModalProps {
@@ -139,7 +140,11 @@ export const TeamPageClient = ({ initialTeams, user }: TeamPageClientProps) => {
                 {teams.map((team) => {
                     const owner = team.members.find((m) => m.role === "owner");
                     return (
-                        <div key={team.id} className={styles.teamCard}>
+                        <Link
+                            href={`/team/${team.id}`}
+                            key={team.id}
+                            className={styles.teamCard}
+                        >
                             <div className={styles.teamIcon}>
                                 <IoPeopleOutline />
                             </div>
@@ -154,7 +159,7 @@ export const TeamPageClient = ({ initialTeams, user }: TeamPageClientProps) => {
                                     ? "you"
                                     : owner?.name}
                             </p>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>
