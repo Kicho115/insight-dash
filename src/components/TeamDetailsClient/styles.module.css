@@ -1,0 +1,106 @@
+.card {
+    max-width: 800px;
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cardTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.inviteButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #4f46e5;
+    color: #ffffff;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.inviteButton:hover {
+    background-color: #4338ca;
+}
+
+.inviteButton svg {
+    font-size: 1.1rem;
+}
+
+.memberList {
+    display: flex;
+    flex-direction: column;
+}
+
+.memberRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+.memberRow:last-child {
+    border-bottom: none;
+}
+
+.memberInfo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar {
+    font-size: 2.5rem;
+    color: #9ca3af;
+}
+
+.memberInfo div {
+    display: flex;
+    flex-direction: column;
+}
+
+.memberName {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.memberEmail {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.memberRole {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.ownerIcon {
+    color: #c084fc; /* Purple */
+}
+.adminIcon {
+    color: #60a5fa; /* Blue */
+}
