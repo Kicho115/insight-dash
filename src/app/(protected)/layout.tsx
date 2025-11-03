@@ -9,12 +9,12 @@ import styles from "./layout.module.css";
 
 // Providers & UI
 import { UIProvider, useUI } from "@/context/UIProvider";
-import { FilesProvider } from "@/context/FilesProvider";
 
 // App chrome
 import { Sidebar } from "@/components/sidebar";
 import { Modal } from "@/components/modal";
 import { UploadForm } from "@/components/uploadForm";
+import { TeamsProvider } from "@/context/TeamsProvider";
 
 // Keep this small controller separate so only it re-renders on modal open/close
 function AppModalController() {
@@ -44,7 +44,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     // Main protected shell
     return (
         <UIProvider>
-            <FilesProvider>
+            <TeamsProvider>
                 <div className={styles.container}>
                     <Sidebar />
                     <main className={styles.content}>{children}</main>
@@ -52,7 +52,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 </div>
 
                 {/* Out-of-flow overlay, shown above the app without affecting layout */}
-            </FilesProvider>
+            </TeamsProvider>
         </UIProvider>
     );
 }

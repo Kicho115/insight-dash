@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthProvider";
 import { useUI } from "@/context/UIProvider";
 import { signOutUser } from "@/services/firebase/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     IoPersonCircleSharp,
     IoFolderOpen,
@@ -30,9 +30,18 @@ export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
     // Start collapsed on mobile, expanded on desktop
-    const [isCollapsed, setIsCollapsed] = useState(
-        typeof window !== "undefined" ? window.innerWidth <= 768 : false
-    );
+    const [isCollapsed, setIsCollapsed] = useState(true);
+
+    useEffect(() => {
+        const checkSize = () => {
+            setIsCollapsed(window.innerWidth <= 768);
+        };
+        // Check size on mount
+        checkSize();
+        // Optional: Add listener for window resize
+        window.addEventListener("resize", checkSize);
+        return () => window.removeEventListener("resize", checkSize);
+    }, []);
 
     const handleLogout = async () => {
         const { error } = await signOutUser();
@@ -93,25 +102,37 @@ export const Sidebar = () => {
                     </div>
 
                     <hr className={styles.divider} />
-                    {menuItems.map((item) => (
-                        <Link
-                            href={item.path}
-                            key={item.name}
-                            // Apply 'active' class if the current path matches the item's path
-                            className={`${styles.item} ${
-                                pathname === item.path ? styles.active : ""
-                            }`}
-                            onClick={() => {
-                                // Close sidebar on mobile after clicking a link
-                                if (window.innerWidth <= 768) {
-                                    setIsCollapsed(true);
-                                }
-                            }}
-                        >
-                            {item.icon}
-                            {!isCollapsed && <p>{item.name}</p>}
-                        </Link>
-                    ))}
+                    {menuItems.map((item) => {
+                        // Use startsWith to handle nested routes like /team/[teamId]
+                        const isActive = pathname.startsWith(item.path);
+                        // Specific check for /home to avoid it matching all routes
+                        const isHomeActive =
+                            item.path === "/home" && pathname === "/home";
+
+                        return (
+                            <Link
+                                href={item.path}
+                                key={item.name}
+                                className={`${styles.item} ${
+                                    (
+                                        item.path === "/home"
+                                            ? isHomeActive
+                                            : isActive
+                                    )
+                                        ? styles.active
+                                        : ""
+                                }`}
+                                onClick={() => {
+                                    if (window.innerWidth <= 768) {
+                                        setIsCollapsed(true);
+                                    }
+                                }}
+                            >
+                                {item.icon}
+                                {!isCollapsed && <p>{item.name}</p>}
+                            </Link>
+                        );
+                    })}
                     <button
                         onClick={() => {
                             openUploadModal();
