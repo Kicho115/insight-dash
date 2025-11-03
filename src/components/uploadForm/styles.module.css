@@ -220,3 +220,34 @@ input:checked + .slider:before {
     color: #2f855a;
     border: 1px solid #c6f6d5;
 }
+
+/* --- Style for the Select Dropdown --- */
+.selectInput {
+    /* Inherit all styles from .input for consistency */
+    width: 100%;
+    padding: 12px 12px 12px 40px; /* Padding for icon */
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    font-size: 1rem;
+    outline: none;
+    background-color: #ffffff;
+    color: #1a202c;
+
+    /* Select-specific overrides */
+    appearance: none; /* Remove default OS arrow */
+    cursor: pointer;
+
+    /* Custom Arrow (SVG Chevron) */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em;
+
+    /* Ensure padding doesn't hide the arrow */
+    padding-right: 2.5rem;
+}
+
+.selectInput:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}

@@ -1,9 +1,3 @@
-export type FilePermission = {
-    type: "user" | "team";
-    id: string; // userId or teamId
-    role: "view" | "edit" | "admin";
-};
-
 export type FileStatus = "Uploaded" | "Processing" | "Ready" | "Error";
 
 export type File = {
@@ -17,7 +11,10 @@ export type File = {
     creatorId: string;
     path: string;
     size: number;
-    permissions: FilePermission[]; // Who can access this file
+    permissions: {
+        [userId: string]: "admin" | "edit" | "view";
+    };
+    teamIds?: string[];
     isLocked: boolean; // To prevent deletion while other users are using it
     status: FileStatus;
     metadata?: ExcelMetadata | CsvMetadata; // File has metadata after processing

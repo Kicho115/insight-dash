@@ -10,12 +10,14 @@ import {
     ExcelMetadata,
     CsvMetadata,
 } from "@/types/file";
+import { Team } from "@/types/user";
+import { getTeamsForUser as fetchUserTeams, getTeamsForUser } from "./teams";
 
 interface PrepareUploadOptions {
     fileName: string;
     fileType: string;
     fileSize: number;
-    isPublic: boolean;
+    visibility: string;
     displayName: string;
     user: { uid: string };
 }
@@ -29,7 +31,7 @@ export async function prepareFileUpload({
     fileName,
     fileType,
     fileSize,
-    isPublic,
+    visibility,
     displayName,
     user,
 }: PrepareUploadOptions): Promise<{
@@ -37,6 +39,31 @@ export async function prepareFileUpload({
     fileId: string;
     filePath: string;
 }> {
+    // Determine visibility settings
+    const isPublic = visibility === "public";
+    const isPrivate = visibility === "private";
+    // If it's not public or private, it must be a team ID
+    const teamId = !isPublic && !isPrivate ? visibility : null;
+
+    const permissions: { [key: string]: string } = {
+        [user.uid]: "admin", // El creador siempre es admin
+    };
+    const teamIds: string[] = [];
+
+    if (teamId) {
+        // Verify the user is actually a member of this team before allowing
+        const team = (
+            await dbAdmin.collection("teams").doc(teamId).get()
+        ).data() as Team;
+        if (!team || !team.memberIds.includes(user.uid)) {
+            throw new Error(
+                "User does not have permission to share with this team."
+            );
+        }
+
+        teamIds.push(teamId);
+    }
+
     const fileId = uuidv4();
     const filePath = `files/${user.uid}/${fileId}/${fileName}`;
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
@@ -47,11 +74,10 @@ export async function prepareFileUpload({
         displayName: displayName || fileName,
         size: fileSize,
         path: filePath,
-        isPublic,
+        isPublic: isPublic,
         creatorId: user.uid,
-        permissions: [
-            { type: "user" as const, id: user.uid, role: "admin" as const },
-        ],
+        permissions: permissions,
+        teamIds: teamIds,
         isLocked: false,
         url: "",
         status: "Uploaded" as FileStatus,
@@ -80,17 +106,31 @@ export async function prepareFileUpload({
  * @returns A list of the file metadata objects.
  */
 export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
+    // Obtener los equipos del usuario
+    const userTeams = await fetchUserTeams(userId);
+    const userTeamIds = userTeams.map((team) => team.id);
+
+    // Definir las 3 consultas
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);
     const publicFilesQuery = dbAdmin
         .collection("files")
         .where("isPublic", "==", true);
+    const teamFilesQuery =
+        userTeamIds.length > 0
+            ? dbAdmin
+                  .collection("files")
+                  .where("teamIds", "array-contains-any", userTeamIds)
+            : null;
 
-    const [userFilesSnapshot, publicFilesSnapshot] = await Promise.all([
-        userFilesQuery.get(),
-        publicFilesQuery.get(),
-    ]);
+    // Ejecutar consultas en paralelo
+    const [userFilesSnapshot, publicFilesSnapshot, teamFilesSnapshot] =
+        await Promise.all([
+            userFilesQuery.get(),
+            publicFilesQuery.get(),
+            teamFilesQuery ? teamFilesQuery.get() : Promise.resolve(null),
+        ]);
 
     const filesMap = new Map<string, FileMetadata>();
 
@@ -108,6 +148,9 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
 
     userFilesSnapshot.forEach(processDoc);
     publicFilesSnapshot.forEach(processDoc);
+    if (teamFilesSnapshot) {
+        teamFilesSnapshot.forEach(processDoc);
+    }
 
     const files = Array.from(filesMap.values());
     files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -276,9 +319,25 @@ export async function getDownloadUrl(
         throw new Error("File path is missing in metadata.");
     }
 
-    // Security Check: Allow download if public or user is creator
-    // (Expand this later based on your 'permissions' array if needed)
-    const hasPermission = fileData.isPublic || fileData.creatorId === userId;
+    let hasPermission = false;
+
+    // 1. Is public
+    if (fileData.isPublic) {
+        hasPermission = true;
+    }
+    // 2. Creator
+    else if (fileData.creatorId === userId) {
+        hasPermission = true;
+    }
+    // 3. Its part of the teams the user belongs to
+    else if (fileData.teamIds && fileData.teamIds.length > 0) {
+        const userTeams = await getTeamsForUser(userId);
+        const userTeamIds = userTeams.map((t) => t.id);
+        hasPermission = fileData.teamIds.some((teamId: string) =>
+            userTeamIds.includes(teamId)
+        );
+    }
+
     if (!hasPermission) {
         throw new Error("User does not have permission to download this file.");
     }
