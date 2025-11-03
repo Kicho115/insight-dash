@@ -1,0 +1,286 @@
+/* Grid for team cards */
+.gridContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Base card style */
+.teamCard,
+.createCard {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.teamCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.teamIcon {
+    font-size: 1.75rem;
+    color: #4f46e5;
+    margin-bottom: 0.75rem;
+}
+
+.teamName {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.teamMeta {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+/* Create Team Card */
+.createCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #d1d5db;
+    background-color: #f9fafb;
+    color: #4b5563;
+    cursor: pointer;
+    min-height: 160px;
+}
+
+.createCard:hover {
+    background-color: #ffffff;
+    border-color: #4f46e5;
+    color: #4f46e5;
+    transform: translateY(0); /* Override card hover */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.createIconWrapper {
+    font-size: 2rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 2px dashed #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.createCard:hover .createIconWrapper {
+    background-color: #eef2ff;
+    border-color: #4f46e5;
+}
+
+.createTitle {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Modal Styles */
+.modalContainer {
+    padding: 1.5rem;
+}
+
+.modalTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    color: #111827;
+    margin: 0 0 0.5rem;
+}
+
+.modalSubtitle {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.inputGroup {
+    margin-bottom: 1.5rem;
+}
+
+.modalLabel {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.modalInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modalInput:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.modalError {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.modalButtonSecondary,
+.modalButtonPrimary {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modalButtonSecondary:disabled,
+.modalButtonPrimary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modalButtonSecondary {
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.modalButtonSecondary:hover:not(:disabled) {
+    background-color: #f9fafb;
+}
+
+.modalButtonPrimary {
+    background-color: #4f46e5;
+    color: #ffffff;
+}
+
+.modalButtonPrimary:hover:not(:disabled) {
+    background-color: #4338ca;
+}
+
+/* INVITATION STYLES */
+.invitationContainer {
+    margin-bottom: 2.5rem;
+}
+
+.invitationTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+}
+
+.invitationCard {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.invitationBody {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #374151;
+}
+
+.invitationIcon {
+    font-size: 1.5rem;
+    color: #4f46e5;
+}
+
+.inviterName {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-left: 0.25rem;
+}
+
+.invitationActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.actionButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.actionButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.declineButton {
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+.declineButton:hover:not(:disabled) {
+    background-color: #f9fafb;
+}
+
+.acceptButton {
+    background-color: #10b981; /* Green */
+    color: #ffffff;
+}
+.acceptButton:hover:not(:disabled) {
+    background-color: #059669;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.declineButton .spinner {
+    border-color: rgba(0, 0, 0, 0.2);
+    border-top-color: #4b5563;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

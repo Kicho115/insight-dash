@@ -7,7 +7,7 @@ import { AppUser } from "@/types/user";
 
 interface UploadFileOptions {
     file: File;
-    isPublic: boolean;
+    visibility: string;
     displayName: string;
     user: AppUser;
 }
@@ -20,7 +20,7 @@ interface UploadFileOptions {
  */
 export const uploadFile = async ({
     file,
-    isPublic,
+    visibility,
     displayName,
     user,
 }: UploadFileOptions): Promise<{ success: boolean; error?: Error }> => {
@@ -36,7 +36,7 @@ export const uploadFile = async ({
                 fileName: file.name,
                 fileType: file.type,
                 fileSize: file.size,
-                isPublic,
+                visibility: visibility,
                 displayName: displayName,
             }),
             headers: {
@@ -204,5 +204,35 @@ export const getDownloadLink = async (
     } catch (error) {
         console.error("Error getting download link:", error);
         return null;
+    }
+};
+
+/**
+ * @function updateFileVisibility
+ * @description Calls the secure API route to update a file's visibility.
+ * @param fileId The ID of the file to update.
+ * @param visibility The new visibility setting ("private", "public", or a teamId).
+ * @returns {Promise<{ success: boolean; error?: Error }>}
+ */
+export const updateFileVisibility = async (
+    fileId: string,
+    visibility: string
+): Promise<{ success: boolean; error?: Error }> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}/visibility`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ visibility }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to update visibility.");
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating file visibility:", error);
+        return { success: false, error: error as Error };
     }
 };

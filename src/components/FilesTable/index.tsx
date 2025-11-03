@@ -6,9 +6,14 @@ import styles from "./styles.module.css";
 import { File as FileMetadata, FileStatus } from "@/types/file";
 import { ConfirmationModal } from "@/components/confirmationModal";
 import { RenameFileModal } from "@/components/RenameFileModal";
-import { deleteFile, renameFile, getDownloadLink } from "@/services/files";
+import { VisibilityModal } from "@/components/VisibilityModal";
+import {
+    deleteFile,
+    renameFile,
+    getDownloadLink,
+    updateFileVisibility,
+} from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";
-import { useFiles } from "@/context/FilesProvider";
 import {
     IoDocumentTextOutline,
     IoLockClosedOutline,
@@ -18,7 +23,10 @@ import {
     IoPencilOutline,
     IoDownloadOutline,
     IoInformationCircleOutline,
+    IoPeopleOutline,
+    IoShareSocialOutline,
 } from "react-icons/io5";
+import { Team } from "@/types/user";
 
 // Helper functions (could be moved to a 'utils' file later)
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -69,19 +77,75 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
-export const FilesTable = () => {
+// --- Helper para Visibilidad ---
+const getVisibilityInfo = (file: SerializedFile, teams: Team[]) => {
+    if (file.isPublic) {
+        return { icon: <IoGlobeOutline />, text: "Public" };
+    }
+    if (file.teamIds && file.teamIds.length > 0) {
+        const teamId = file.teamIds[0];
+        const team = teams.find((t) => t.id === teamId);
+        return {
+            icon: <IoPeopleOutline />,
+            text: team ? team.name : "Team",
+        };
+    }
+    return { icon: <IoLockClosedOutline />, text: "Private" };
+};
+
+// Type for the serialized data coming from the server
+type SerializedFile = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
+    createdAt: string;
+    updatedAt: string;
+};
+
+interface FilesTableProps {
+    initialFiles: SerializedFile[];
+    userTeams: Team[];
+}
+
+export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     const router = useRouter();
     const { user } = useAuth();
 
-    const { files, isLoading, error } = useFiles();
+    const [files, setFiles] = useState(initialFiles);
+    const [teams, setTeams] = useState(userTeams);
+
+    // This useEffect ensures the table updates if the server passes new props
+    useEffect(() => {
+        setFiles(initialFiles);
+    }, [initialFiles]);
+
+    useEffect(() => {
+        setTeams(userTeams);
+    }, [userTeams]);
+
+    // POLLING FOR STATUS UPDATES
+    useEffect(() => {
+        const filesAreProcessing = files.some(
+            (file) => file.status === "Processing" || file.status === "Uploaded"
+        );
+
+        if (filesAreProcessing) {
+            const intervalId = setInterval(() => {
+                router.refresh();
+            }, 5000); // 5 seconds
+
+            return () => clearInterval(intervalId);
+        }
+    }, [files, router]);
 
     // Deletion State
     const [isDeleting, setIsDeleting] = useState(false);
-    const [fileToDelete, setFileToDelete] = useState<FileMetadata | null>(null);
+    const [fileToDelete, setFileToDelete] = useState<SerializedFile | null>(
+        null
+    );
 
     // Rename State
     const [isRenaming, setIsRenaming] = useState(false);
-    const [fileToRename, setFileToRename] = useState<FileMetadata | null>(null);
+    const [fileToRename, setFileToRename] = useState<SerializedFile | null>(
+        null
+    );
 
     // Download State
     const [isDownloading, setIsDownloading] = useState<string | null>(null);
@@ -93,6 +157,10 @@ export const FilesTable = () => {
 
     // State to show/hide status info card
     const [showStatusInfo, setShowStatusInfo] = useState(false);
+
+    const [isChangingVisibility, setIsChangingVisibility] = useState(false);
+    const [fileToChangeVisibility, setFileToChangeVisibility] =
+        useState<SerializedFile | null>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -109,7 +177,7 @@ export const FilesTable = () => {
     }, []);
 
     // --- Delete Handlers ---
-    const handleOpenDeleteModal = (file: FileMetadata) => {
+    const handleOpenDeleteModal = (file: SerializedFile) => {
         setFileToDelete(file);
         setActiveActionMenu(null);
     };
@@ -121,7 +189,7 @@ export const FilesTable = () => {
         const result = await deleteFile(fileToDelete.id);
 
         if (result.success) {
-            // THE MODERN WAY: Tell Next.js to refresh server data
+            // Tell Next.js to refresh server data
             router.refresh();
         } else {
             let errorMessage = "Failed to delete the file.";
@@ -137,7 +205,7 @@ export const FilesTable = () => {
     };
 
     // --- Rename Handlers ---
-    const handleOpenRenameModal = (file: FileMetadata) => {
+    const handleOpenRenameModal = (file: SerializedFile) => {
         setFileToRename(file);
         setActiveActionMenu(null);
     };
@@ -150,6 +218,7 @@ export const FilesTable = () => {
                 throw result.error || new Error("Rename failed");
             }
             // Success! onSnapshot will update the table. Close modal.
+            router.refresh();
             setFileToRename(null);
         } catch (err) {
             console.error("Rename failed:", err);
@@ -161,7 +230,7 @@ export const FilesTable = () => {
     };
 
     // --- Download Handler ---
-    const handleDownload = async (file: FileMetadata) => {
+    const handleDownload = async (file: SerializedFile) => {
         setActiveActionMenu(null);
         setIsDownloading(file.id);
         try {
@@ -180,15 +249,33 @@ export const FilesTable = () => {
         }
     };
 
-    // Use the isLoading state from the context for the initial load
-    if (isLoading) {
-        return <div className={styles.loading}>Loading files...</div>;
-    }
+    // --- Visibility handlers ---
+    const handleOpenVisibilityModal = (file: SerializedFile) => {
+        setFileToChangeVisibility(file);
+        setActiveActionMenu(null);
+    };
 
-    // Use the error state from the context
-    if (error) {
-        return <div className={styles.error}>{error}</div>;
-    }
+    const handleConfirmVisibilityChange = async (newVisibility: string) => {
+        if (!fileToChangeVisibility) return;
+        setIsChangingVisibility(true);
+        try {
+            const result = await updateFileVisibility(
+                fileToChangeVisibility.id,
+                newVisibility
+            );
+            if (!result.success) {
+                throw result.error || new Error("Failed to update visibility");
+            }
+            router.refresh(); // Refrescar datos
+            setFileToChangeVisibility(null); // Cerrar modal
+        } catch (err) {
+            console.error("Failed to change visibility:", err);
+            // Re-throw para que el modal muestre el error
+            throw err;
+        } finally {
+            setIsChangingVisibility(false);
+        }
+    };
 
     const handleFileClick = (fileId: string) => {
         router.push(`/files/${fileId}`);
@@ -263,125 +350,144 @@ export const FilesTable = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {files.map((file) => (
-                            <tr
-                                key={file.id}
-                                onClick={() => handleFileClick(file.id)}
-                                className={styles.tableRow}
-                            >
-                                <td>
-                                    <div className={styles.fileNameCell}>
-                                        <IoDocumentTextOutline
-                                            className={styles.fileIcon}
+                        {files.map((file) => {
+                            const visibility = getVisibilityInfo(file, teams);
+                            const canManage = user
+                                ? user.id === file.creatorId ||
+                                  file.permissions[user.id] === "admin" ||
+                                  file.permissions[user.id] === "edit"
+                                : false;
+
+                            return (
+                                <tr
+                                    key={file.id}
+                                    onClick={() => handleFileClick(file.id)}
+                                    className={styles.tableRow}
+                                >
+                                    <td>
+                                        <div className={styles.fileNameCell}>
+                                            <IoDocumentTextOutline
+                                                className={styles.fileIcon}
+                                            />
+                                            {file.displayName}
+                                        </div>
+                                    </td>
+                                    <td>{formatBytes(file.size || 0)}</td>
+                                    <td>{formatDate(file.updatedAt)}</td>
+                                    <td>
+                                        <div className={styles.visibilityCell}>
+                                            {visibility.icon}
+                                            <span>{visibility.text}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <StatusBadge
+                                            status={file.status || "Unknown"}
                                         />
-                                        {file.displayName}
-                                    </div>
-                                </td>
-                                <td>{formatBytes(file.size || 0)}</td>
-                                <td>{formatDate(file.updatedAt)}</td>
-                                <td>
-                                    <div className={styles.visibilityCell}>
-                                        {file.isPublic ? (
-                                            <IoGlobeOutline />
-                                        ) : (
-                                            <IoLockClosedOutline />
-                                        )}
-                                        {file.isPublic ? "Public" : "Private"}
-                                    </div>
-                                </td>
-                                <td>
-                                    <StatusBadge
-                                        status={file.status || "Unknown"}
-                                    />
-                                </td>
-                                <td>
-                                    <div className={styles.actionsCell}>
-                                        {user && user.id === file.creatorId && (
-                                            <>
-                                                <button
-                                                    className={
-                                                        styles.actionsButton
-                                                    }
-                                                    onClick={(e) => {
-                                                        setActiveActionMenu(
-                                                            activeActionMenu ===
-                                                                file.id
-                                                                ? null
-                                                                : file.id
-                                                        );
-                                                        e.stopPropagation();
-                                                    }}
-                                                    disabled={
-                                                        isDownloading ===
-                                                        file.id
-                                                    } // Disable while downloading this file
-                                                >
-                                                    {isDownloading ===
-                                                    file.id ? (
-                                                        <span
-                                                            className={
-                                                                styles.downloadingSpinner
-                                                            }
-                                                        ></span> // Basic spinner
-                                                    ) : (
-                                                        <IoEllipsisHorizontal />
-                                                    )}
-                                                </button>
-                                                {activeActionMenu ===
-                                                    file.id && (
-                                                    <div
+                                    </td>
+                                    <td>
+                                        <div className={styles.actionsCell}>
+                                            <button
+                                                className={styles.actionsButton}
+                                                onClick={(e) => {
+                                                    setActiveActionMenu(
+                                                        activeActionMenu ===
+                                                            file.id
+                                                            ? null
+                                                            : file.id
+                                                    );
+                                                    e.stopPropagation();
+                                                }}
+                                                disabled={
+                                                    isDownloading === file.id
+                                                }
+                                            >
+                                                {isDownloading === file.id ? (
+                                                    <span
                                                         className={
-                                                            styles.actionMenu
+                                                            styles.downloadingSpinner
                                                         }
-                                                        ref={menuRef}
-                                                    >
-                                                        {/* Rename Button */}
-                                                        <button
-                                                            className={`${styles.menuItem} ${styles.renameItem}`}
-                                                            onClick={(e) => {
-                                                                handleOpenRenameModal(
-                                                                    file
-                                                                );
-                                                                e.stopPropagation();
-                                                            }}
-                                                        >
-                                                            <IoPencilOutline />
-                                                            Rename
-                                                        </button>
-                                                        {/* Download Button */}
-                                                        <button
-                                                            className={`${styles.menuItem} ${styles.downloadItem}`}
-                                                            onClick={(e) => {
-                                                                handleDownload(
-                                                                    file
-                                                                );
-                                                                e.stopPropagation();
-                                                            }}
-                                                        >
-                                                            <IoDownloadOutline />
-                                                            Download
-                                                        </button>
-                                                        {/* Delete Button */}
-                                                        <button
-                                                            className={`${styles.menuItem} ${styles.deleteItem}`}
-                                                            onClick={(e) => {
-                                                                handleOpenDeleteModal(
-                                                                    file
-                                                                );
-                                                                e.stopPropagation();
-                                                            }}
-                                                        >
-                                                            <IoTrashOutline />
-                                                            Delete
-                                                        </button>
-                                                    </div>
+                                                    ></span>
+                                                ) : (
+                                                    <IoEllipsisHorizontal />
                                                 )}
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                                            </button>
+
+                                            {activeActionMenu === file.id && (
+                                                <div
+                                                    className={
+                                                        styles.actionMenu
+                                                    }
+                                                    ref={menuRef}
+                                                >
+                                                    <button
+                                                        className={`${styles.menuItem} ${styles.downloadItem}`}
+                                                        onClick={(e) => {
+                                                            handleDownload(
+                                                                file
+                                                            );
+                                                            e.stopPropagation();
+                                                        }}
+                                                    >
+                                                        <IoDownloadOutline />
+                                                        Download
+                                                    </button>
+                                                    {canManage && (
+                                                        <>
+                                                            <button
+                                                                className={`${styles.menuItem} ${styles.renameItem}`}
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    handleOpenRenameModal(
+                                                                        file
+                                                                    );
+                                                                    e.stopPropagation();
+                                                                }}
+                                                            >
+                                                                <IoPencilOutline />
+                                                                Rename
+                                                            </button>
+
+                                                            {/* --- Botón de Visibilidad --- */}
+                                                            <button
+                                                                className={`${styles.menuItem} ${styles.visibilityItem}`}
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    handleOpenVisibilityModal(
+                                                                        file
+                                                                    );
+                                                                    e.stopPropagation();
+                                                                }}
+                                                            >
+                                                                <IoShareSocialOutline />
+                                                                Visibility
+                                                            </button>
+
+                                                            <button
+                                                                className={`${styles.menuItem} ${styles.deleteItem}`}
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    handleOpenDeleteModal(
+                                                                        file
+                                                                    );
+                                                                    e.stopPropagation();
+                                                                }}
+                                                            >
+                                                                <IoTrashOutline />
+                                                                Delete
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -401,6 +507,25 @@ export const FilesTable = () => {
                 onRename={handleConfirmRename}
                 currentName={fileToRename?.displayName || ""}
                 isRenaming={isRenaming}
+            />
+            <VisibilityModal
+                isOpen={!!fileToChangeVisibility}
+                onClose={() => setFileToChangeVisibility(null)}
+                onSave={handleConfirmVisibilityChange}
+                file={
+                    fileToChangeVisibility
+                        ? {
+                              ...fileToChangeVisibility,
+                              createdAt: new Date(
+                                  fileToChangeVisibility.createdAt
+                              ),
+                              updatedAt: new Date(
+                                  fileToChangeVisibility.updatedAt
+                              ),
+                          }
+                        : null
+                }
+                isSaving={isChangingVisibility}
             />
         </>
     );
