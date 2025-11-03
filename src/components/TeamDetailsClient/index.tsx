@@ -18,14 +18,17 @@ import { InviteMemberModal } from "@/components/InviteMemberModal";
 import { removeMember, updateMemberRole } from "@/services/teams";
 import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "../confirmationModal";
+import { useAuth } from "@/context/AuthProvider";
 
-type Team = Omit<TeamType, "createdAt"> & {
+// Type for serialized team data passed from Server Component
+type SerializedTeam = Omit<TeamType, "createdAt"> & {
     createdAt: string;
 };
 
 interface TeamDetailsClientProps {
-    team: Team;
-    currentUser: ServerAuthUser; // The authenticated user
+    teamId: string;
+    initialTeam: SerializedTeam;
+    currentUser: ServerAuthUser;
 }
 
 // Helper to get role display name and icon
@@ -49,26 +52,18 @@ const getRoleInfo = (role: string) => {
 const MemberActionMenu = ({
     member,
     currentUserRole,
+    isUpdatingRole,
     onRemove,
     onUpdateRole,
 }: {
     member: TeamMember;
     currentUserRole: TeamMemberRole;
+    isUpdatingRole: boolean;
     onRemove: () => void;
     onUpdateRole: (newRole: TeamMemberRole) => void;
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-
-    // --- Permission Logic ---
-    const canOwnerManage =
-        currentUserRole === "owner" && member.role !== "owner";
-    const canAdminManage =
-        currentUserRole === "admin" && member.role === "member";
-
-    if (!canOwnerManage && !canAdminManage) {
-        return null;
-    }
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -85,11 +80,22 @@ const MemberActionMenu = ({
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // --- Permission Logic ---
+    const canOwnerManage =
+        currentUserRole === "owner" && member.role !== "owner";
+    const canAdminManage =
+        currentUserRole === "admin" && member.role === "member";
+
+    if (!canOwnerManage && !canAdminManage) {
+        return null;
+    }
+
     return (
         <div className={styles.actionMenuContainer} ref={menuRef}>
             <button
                 className={styles.actionMenuButton}
                 onClick={() => setIsOpen(!isOpen)}
+                disabled={isUpdatingRole}
             >
                 <IoEllipsisHorizontal />
             </button>
@@ -101,6 +107,7 @@ const MemberActionMenu = ({
                         <button
                             className={styles.menuItem}
                             onClick={() => onUpdateRole("admin")}
+                            disabled={isUpdatingRole}
                         >
                             <IoArrowUpCircleOutline />
                             Make Admin
@@ -110,6 +117,7 @@ const MemberActionMenu = ({
                         <button
                             className={styles.menuItem}
                             onClick={() => onUpdateRole("member")}
+                            disabled={isUpdatingRole}
                         >
                             <IoArrowDownCircleOutline />
                             Make Member
@@ -120,6 +128,7 @@ const MemberActionMenu = ({
                     <button
                         className={`${styles.menuItem} ${styles.deleteItem}`}
                         onClick={onRemove}
+                        disabled={isUpdatingRole}
                     >
                         <IoTrashOutline />
                         Remove Member
@@ -131,27 +140,30 @@ const MemberActionMenu = ({
 };
 
 export const TeamDetailsClient = ({
-    team,
+    initialTeam,
     currentUser,
 }: TeamDetailsClientProps) => {
     const router = useRouter();
-    const [members] = useState(team.members);
+
+    const [team, setTeam] = useState(() => ({
+        ...initialTeam,
+        createdAt: new Date(initialTeam.createdAt),
+    }));
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isInviting, setIsInviting] = useState(false);
     const [inviteError, setInviteError] = useState<string | null>(null);
-
     const [isDeleting, setIsDeleting] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(
         null
     );
-
     const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
-    // Find out if the current user is an Admin or Owner
-    const currentUserRole =
-        members.find((m) => m.userId === currentUser.uid)?.role || "member";
-    const canManage =
-        currentUserRole === "owner" || currentUserRole === "admin";
+    useEffect(() => {
+        setTeam({
+            ...initialTeam,
+            createdAt: new Date(initialTeam.createdAt),
+        });
+    }, [initialTeam]);
 
     const handleSendInvite = async (email: string) => {
         setIsInviting(true);
@@ -159,6 +171,7 @@ export const TeamDetailsClient = ({
         try {
             const result = await sendInvitation(team.id, email);
             if (result.success) {
+                router.refresh(); // Tell the server component to refetch
                 setIsInviteModalOpen(false);
             } else {
                 throw result.error || new Error("Failed to send invite");
@@ -175,12 +188,13 @@ export const TeamDetailsClient = ({
     const handleOpenDeleteModal = (member: TeamMember) => {
         setMemberToDelete(member);
     };
+
     const handleConfirmDelete = async () => {
         if (!memberToDelete) return;
         setIsDeleting(true);
         const result = await removeMember(team.id, memberToDelete.userId);
         if (result.success) {
-            router.refresh();
+            router.refresh(); // Tell the server component to refetch
         } else {
             alert(result.error?.message || "Failed to remove member.");
         }
@@ -195,19 +209,25 @@ export const TeamDetailsClient = ({
         setIsUpdatingRole(true);
         const result = await updateMemberRole(team.id, member.userId, newRole);
         if (result.success) {
-            router.refresh();
+            router.refresh(); // Tell the server component to refetch
         } else {
             alert(result.error?.message || "Failed to update role.");
         }
         setIsUpdatingRole(false);
     };
 
+    const currentUserRole = team.members.find(
+        (m) => m.userId === currentUser.uid
+    )!.role;
+    const canManage =
+        currentUserRole === "owner" || currentUserRole === "admin";
+
     return (
         <>
             <div className={styles.card}>
                 <header className={styles.cardHeader}>
                     <h2 className={styles.cardTitle}>
-                        Members ({members.length})
+                        Members ({team.members.length})
                     </h2>
                     {canManage && (
                         <button
@@ -224,7 +244,7 @@ export const TeamDetailsClient = ({
                 </header>
 
                 <div className={styles.memberList}>
-                    {members.map((member) => {
+                    {team.members.map((member) => {
                         const roleInfo = getRoleInfo(member.role);
                         return (
                             <div
@@ -253,6 +273,7 @@ export const TeamDetailsClient = ({
                                         <MemberActionMenu
                                             member={member}
                                             currentUserRole={currentUserRole}
+                                            isUpdatingRole={isUpdatingRole}
                                             onRemove={() =>
                                                 handleOpenDeleteModal(member)
                                             }
