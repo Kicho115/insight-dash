@@ -7,7 +7,7 @@ import { AppUser } from "@/types/user";
 
 interface UploadFileOptions {
     file: File;
-    isPublic: boolean;
+    visibility: string;
     displayName: string;
     user: AppUser;
 }
@@ -20,7 +20,7 @@ interface UploadFileOptions {
  */
 export const uploadFile = async ({
     file,
-    isPublic,
+    visibility,
     displayName,
     user,
 }: UploadFileOptions): Promise<{ success: boolean; error?: Error }> => {
@@ -36,7 +36,7 @@ export const uploadFile = async ({
                 fileName: file.name,
                 fileType: file.type,
                 fileSize: file.size,
-                isPublic,
+                visibility: visibility,
                 displayName: displayName,
             }),
             headers: {

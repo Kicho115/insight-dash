@@ -18,7 +18,6 @@ import { InviteMemberModal } from "@/components/InviteMemberModal";
 import { removeMember, updateMemberRole } from "@/services/teams";
 import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "../confirmationModal";
-import { useAuth } from "@/context/AuthProvider";
 
 // Type for serialized team data passed from Server Component
 type SerializedTeam = Omit<TeamType, "createdAt"> & {

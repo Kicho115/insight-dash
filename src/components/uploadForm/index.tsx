@@ -11,7 +11,11 @@ import {
     IoCheckmarkCircle,
     IoWarning,
     IoDocumentTextOutline,
+    IoGlobe,
+    IoLockClosed,
+    IoPeople,
 } from "react-icons/io5";
+import { useTeams } from "@/context/TeamsProvider";
 
 const ALLOWED_FILE_TYPES = [
     "text/csv",
@@ -28,10 +32,11 @@ interface UploadFormProps {
 export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
     const router = useRouter();
     const { user } = useFirebaseAuth();
+    const { teams, isLoading: isLoadingTeams } = useTeams();
 
     const [file, setFile] = useState<File | null>(null);
     const [displayName, setDisplayName] = useState("");
-    const [isPublic, setIsPublic] = useState(false);
+    const [visibility, setVisibility] = useState<string>("private");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -95,7 +100,7 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
         const result = await uploadFile({
             file,
             user,
-            isPublic,
+            visibility: visibility,
             displayName: displayName.trim(),
         });
 
@@ -110,6 +115,7 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
                 // Reset form for the next time it opens
                 setFile(null);
                 setSuccess(null);
+                setVisibility("private");
             }, 1500);
         } else {
             setError(
@@ -174,19 +180,52 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
                         </div>
                     </div>
 
-                    {/* Public/Private Toggle */}
-                    <div className={styles.toggleWrapper}>
-                        <label className={styles.toggleLabel}>
-                            Make file public?
+                    {/* --- NEW: Visibility Selector --- */}
+                    <div>
+                        <label
+                            htmlFor="visibility"
+                            className={styles.inputLabel}
+                        >
+                            File Visibility
                         </label>
-                        <label className={styles.switch}>
-                            <input
-                                type="checkbox"
-                                checked={isPublic}
-                                onChange={(e) => setIsPublic(e.target.checked)}
-                            />
-                            <span className={styles.slider}></span>
-                        </label>
+                        <div className={styles.inputWrapper}>
+                            {/* Show an icon based on selection */}
+                            <div className={styles.inputIcon}>
+                                {visibility === "public" ? (
+                                    <IoGlobe />
+                                ) : visibility === "private" ? (
+                                    <IoLockClosed />
+                                ) : (
+                                    <IoPeople />
+                                )}
+                            </div>
+                            <select
+                                id="visibility"
+                                className={styles.selectInput}
+                                value={visibility}
+                                onChange={(e) => setVisibility(e.target.value)}
+                                disabled={isLoadingTeams || isLoading}
+                            >
+                                <option value="private">
+                                    Private (Only You)
+                                </option>
+                                <option value="public">
+                                    Public (Everyone)
+                                </option>
+                                {!isLoadingTeams && teams.length > 0 && (
+                                    <optgroup label="Your Teams">
+                                        {teams.map((team) => (
+                                            <option
+                                                key={team.id}
+                                                value={team.id}
+                                            >
+                                                {team.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                )}
+                            </select>
+                        </div>
                     </div>
                 </div>
 

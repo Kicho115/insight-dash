@@ -1,7 +1,13 @@
 "use client";
-import { TeamMemberRole } from "@/types/user";
+import { Team, TeamMemberRole } from "@/types/user";
 
 // This service will be used by client components
+
+// Define the shape of the data coming from the API (dates are strings)
+// This matches the serialized data from the server
+type SerializedTeam = Omit<Team, "createdAt"> & {
+    createdAt: string;
+};
 
 /**
  * @function createTeam
@@ -84,5 +90,30 @@ export const updateMemberRole = async (
     } catch (error) {
         console.error("Error updating role:", error);
         return { success: false, error: error as Error };
+    }
+};
+
+/**
+ * @function getMyTeams
+ * @description Fetches the list of teams for the current authenticated user.
+ * @returns {Promise<Team[]>} A promise that resolves to an array of teams.
+ */
+export const getMyTeams = async (): Promise<Team[]> => {
+    try {
+        const response = await fetch("/api/teams");
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to fetch teams.");
+        }
+
+        const teamsData = (await response.json()) as SerializedTeam[];
+        // Deserialize date strings
+        return teamsData.map((team) => ({
+            ...team,
+            createdAt: new Date(team.createdAt),
+        }));
+    } catch (error) {
+        console.error("Error fetching teams:", error);
+        return []; // Return an empty array on error
     }
 };
