@@ -5,7 +5,6 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
         0 2px 4px -1px rgba(0, 0, 0, 0.06);
     border: 1px solid #e5e7eb;
-    overflow: hidden;
 }
 
 .cardHeader {
@@ -15,6 +14,8 @@
     padding: 1rem 1.5rem;
     background-color: #f9fafb;
     border-bottom: 1px solid #e5e7eb;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
 }
 
 .cardTitle {
@@ -103,4 +104,82 @@
 }
 .adminIcon {
     color: #60a5fa; /* Blue */
+}
+
+.memberRole {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.actionMenuContainer {
+    position: relative;
+    margin-left: auto; /* Push menu button to the far right */
+    padding-left: 1rem;
+}
+
+.actionMenuButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #6b7280;
+}
+
+.actionMenuButton:hover {
+    background-color: #f3f4f6;
+}
+
+.actionMenu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem); /* Position below the button */
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    z-index: 10;
+    overflow: hidden;
+    width: 160px; /* Set width for the menu */
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #374151; /* Default color */
+}
+
+.menuItem:hover {
+    background-color: #f3f4f6;
+}
+
+.menuItem svg {
+    font-size: 1.1rem;
+    color: #6b7280;
+}
+
+.deleteItem {
+    color: #ef4444; /* Red for delete */
+}
+.deleteItem svg {
+    color: #ef4444;
+}
+.deleteItem:hover {
+    background-color: #fef2f2;
 }
