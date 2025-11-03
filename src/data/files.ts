@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
     File as FileMetadata,
     FileStatus,
+    FilePermission,
     ExcelMetadata,
     CsvMetadata,
 } from "@/types/file";
@@ -351,4 +352,67 @@ export async function getDownloadUrl(
     });
 
     return url;
+}
+
+/**
+ * Updates the visibility of a file (isPublic, teamIds, permissions).
+ * @param fileId - The ID of the file to update.
+ * @param userId - The UID of the user making the request (must have admin permissions).
+ * @param newVisibility - The new setting: "public", "private", or a teamId.
+ * @throws Will throw error if file not found, permission denied, or invalid team.
+ */
+export async function updateFileVisibility(
+    fileId: string,
+    userId: string,
+    newVisibility: string
+): Promise<void> {
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+    const fileDoc = await fileDocRef.get();
+
+    if (!fileDoc.exists) {
+        throw new Error("File not found.");
+    }
+
+    const fileData = fileDoc.data() as FileMetadata;
+
+    // Security Check: Only allow creator/admin to change visibility
+    const userRole = fileData.permissions[userId];
+    if (fileData.creatorId !== userId && userRole !== "admin") {
+        throw new Error(
+            "You do not have permission to change this file's visibility."
+        );
+    }
+
+    // Determine new visibility settings
+    const isPublic = newVisibility === "public";
+    const isPrivate = newVisibility === "private";
+    const teamId = !isPublic && !isPrivate ? newVisibility : null;
+
+    const newPermissions: FilePermission[] = [
+        { type: "user", id: userId, role: "admin" }, // Keep the owner as admin
+    ];
+    const newTeamIds: string[] = [];
+
+    if (teamId) {
+        // Verify the user is a member of the team they are sharing to
+        const team = (
+            await dbAdmin.collection("teams").doc(teamId).get()
+        ).data() as Team;
+        if (!team || !team.memberIds.includes(userId)) {
+            throw new Error(
+                "You cannot share a file with a team you are not a member of."
+            );
+        }
+        // Add the new team permission
+        newPermissions.push({ type: "team", id: teamId, role: "view" });
+        newTeamIds.push(teamId);
+    }
+
+    // Atomically update the document in Firestore
+    await fileDocRef.update({
+        isPublic: isPublic,
+        permissions: newPermissions,
+        teamIds: newTeamIds,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
 }
