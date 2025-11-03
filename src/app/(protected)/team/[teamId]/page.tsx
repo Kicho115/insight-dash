@@ -33,7 +33,7 @@ export default async function IndividualTeamPage({
     // Convert any non-plain objects (like Timestamps or Dates) to strings.
     const serializableTeam = {
         ...team,
-        createdAt: team.createdAt.toString(), // .toString() or .toISOString()
+        createdAt: team.createdAt.toString(),
     };
 
     return (

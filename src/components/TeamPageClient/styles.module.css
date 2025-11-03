@@ -180,3 +180,107 @@
 .modalButtonPrimary:hover:not(:disabled) {
     background-color: #4338ca;
 }
+
+/* INVITATION STYLES */
+.invitationContainer {
+    margin-bottom: 2.5rem;
+}
+
+.invitationTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+}
+
+.invitationCard {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.invitationBody {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #374151;
+}
+
+.invitationIcon {
+    font-size: 1.5rem;
+    color: #4f46e5;
+}
+
+.inviterName {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-left: 0.25rem;
+}
+
+.invitationActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.actionButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.actionButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.declineButton {
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+.declineButton:hover:not(:disabled) {
+    background-color: #f9fafb;
+}
+
+.acceptButton {
+    background-color: #10b981; /* Green */
+    color: #ffffff;
+}
+.acceptButton:hover:not(:disabled) {
+    background-color: #059669;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.declineButton .spinner {
+    border-color: rgba(0, 0, 0, 0.2);
+    border-top-color: #4b5563;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

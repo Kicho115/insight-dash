@@ -6,13 +6,21 @@ import {
     User as FirebaseAuthUser,
     AuthError,
 } from "firebase/auth";
-import { auth } from "@/services/firebase/config";
+import { auth, db } from "@/services/firebase/config";
 import { onUserProfileChange } from "@/services/user";
-import { AppUser } from "@/types/user";
+import { AppUser, Invitation } from "@/types/user";
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    Unsubscribe,
+} from "firebase/firestore";
 
 interface AuthState {
     firebaseAuthUser: FirebaseAuthUser | null;
     user: AppUser | null;
+    invitations: Invitation[];
     loading: boolean;
     error: AuthError | null;
 }
@@ -57,11 +65,13 @@ export const useFirebaseAuth = (): AuthState => {
     const [firebaseAuthUser, setFirebaseAuthUser] =
         useState<FirebaseAuthUser | null>(null);
     const [user, setUser] = useState<AppUser | null>(null);
+    const [invitations, setInvitations] = useState<Invitation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<AuthError | null>(null);
 
     useEffect(() => {
         let userProfileUnsubscribe: (() => void) | null = null;
+        let invitationsUnsubscribe: Unsubscribe | null = null;
 
         const authUnsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
             setFirebaseAuthUser(firebaseUser);
@@ -94,6 +104,26 @@ export const useFirebaseAuth = (): AuthState => {
                             setLoading(false);
                         }
                     );
+
+                    // Set up listener for pending invitations
+                    const invitesQuery = query(
+                        collection(db, "invitations"),
+                        where("userId", "==", firebaseUser.uid),
+                        where("status", "==", "pending")
+                    );
+                    invitationsUnsubscribe = onSnapshot(
+                        invitesQuery,
+                        (snapshot) => {
+                            const invites: Invitation[] = [];
+                            snapshot.forEach((doc) => {
+                                invites.push({
+                                    id: doc.id,
+                                    ...doc.data(),
+                                } as Invitation);
+                            });
+                            setInvitations(invites);
+                        }
+                    );
                 } catch (err) {
                     setError(err as AuthError);
                     setLoading(false);
@@ -101,22 +131,17 @@ export const useFirebaseAuth = (): AuthState => {
             } else {
                 // User is logged out
                 setUser(null);
+                setInvitations([]);
                 setLoading(false);
             }
         });
 
         return () => {
             authUnsubscribe();
-            if (userProfileUnsubscribe) {
-                userProfileUnsubscribe();
-            }
+            if (userProfileUnsubscribe) userProfileUnsubscribe();
+            if (invitationsUnsubscribe) invitationsUnsubscribe();
         };
     }, []);
 
-    return {
-        firebaseAuthUser,
-        user,
-        loading,
-        error,
-    };
+    return { firebaseAuthUser, user, invitations, loading, error };
 };

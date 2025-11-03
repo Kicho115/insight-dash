@@ -9,6 +9,8 @@ import {
     IoShieldCheckmark,
     IoMailOutline,
 } from "react-icons/io5";
+import { sendInvitation } from "@/services/invitations";
+import { InviteMemberModal } from "@/components/InviteMemberModal";
 
 type Team = Omit<TeamType, "createdAt"> & {
     createdAt: string;
@@ -41,7 +43,10 @@ export const TeamDetailsClient = ({
     team,
     currentUser,
 }: TeamDetailsClientProps) => {
-    const [members, setMembers] = useState(team.members);
+    const [members] = useState(team.members);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isInviting, setIsInviting] = useState(false);
+    const [inviteError, setInviteError] = useState<string | null>(null);
 
     // Find out if the current user is an Admin or Owner
     const currentUserRole = members.find(
@@ -50,46 +55,86 @@ export const TeamDetailsClient = ({
     const canManage =
         currentUserRole === "owner" || currentUserRole === "admin";
 
-    return (
-        <div className={styles.card}>
-            <header className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Members ({members.length})</h2>
-                {canManage && (
-                    <button className={styles.inviteButton}>
-                        <IoMailOutline />
-                        Invite Member
-                    </button>
-                )}
-            </header>
+    const handleSendInvite = async (email: string) => {
+        setIsInviting(true);
+        setInviteError(null);
+        try {
+            const result = await sendInvitation(team.id, email);
+            if (result.success) {
+                setIsInviteModalOpen(false);
+            } else {
+                throw result.error || new Error("Failed to send invite");
+            }
+        } catch (err) {
+            setInviteError((err as Error).message);
+            // Re-throw for the modal to also handle its internal state
+            throw err;
+        } finally {
+            setIsInviting(false);
+        }
+    };
 
-            <div className={styles.memberList}>
-                {members.map((member) => {
-                    const roleInfo = getRoleInfo(member.role);
-                    return (
-                        <div key={member.userId} className={styles.memberRow}>
-                            <div className={styles.memberInfo}>
-                                <IoPersonCircleSharp
-                                    className={styles.avatar}
-                                />
-                                <div>
-                                    <span className={styles.memberName}>
-                                        {member.name}
-                                        {member.userId === currentUser.uid &&
-                                            " (You)"}
-                                    </span>
-                                    <span className={styles.memberEmail}>
-                                        {member.email}
-                                    </span>
+    return (
+        <>
+            <div className={styles.card}>
+                <header className={styles.cardHeader}>
+                    <h2 className={styles.cardTitle}>
+                        Members ({members.length})
+                    </h2>
+                    {canManage && (
+                        <button
+                            className={styles.inviteButton}
+                            onClick={() => {
+                                setInviteError(null);
+                                setIsInviteModalOpen(true);
+                            }}
+                        >
+                            <IoMailOutline />
+                            Invite Member
+                        </button>
+                    )}
+                </header>
+
+                <div className={styles.memberList}>
+                    {members.map((member) => {
+                        const roleInfo = getRoleInfo(member.role);
+                        return (
+                            <div
+                                key={member.userId}
+                                className={styles.memberRow}
+                            >
+                                <div className={styles.memberInfo}>
+                                    <IoPersonCircleSharp
+                                        className={styles.avatar}
+                                    />
+                                    <div>
+                                        <span className={styles.memberName}>
+                                            {member.name}
+                                            {member.userId ===
+                                                currentUser.uid && " (You)"}
+                                        </span>
+                                        <span className={styles.memberEmail}>
+                                            {member.email}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className={styles.memberRole}>
+                                    {roleInfo.icon}
+                                    <span>{roleInfo.label}</span>
                                 </div>
                             </div>
-                            <div className={styles.memberRole}>
-                                {roleInfo.icon}
-                                <span>{roleInfo.label}</span>
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
-        </div>
+
+            <InviteMemberModal
+                isOpen={isInviteModalOpen}
+                onClose={() => setIsInviteModalOpen(false)}
+                onInvite={handleSendInvite}
+                isLoading={isInviting}
+                error={inviteError}
+            />
+        </>
     );
 };
