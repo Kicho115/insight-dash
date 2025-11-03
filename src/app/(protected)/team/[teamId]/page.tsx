@@ -1,7 +1,6 @@
-// This is a Server Component
 import styles from "./styles.module.css";
 import { requireServerAuth } from "@/lib/serverAuth";
-import { getTeamById } from "@/data/teams"; // La nueva "receta"
+import { getTeamById } from "@/data/teams";
 import { TeamDetailsClient } from "@/components/TeamDetailsClient";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -22,15 +21,15 @@ export default async function IndividualTeamPage({
 
     try {
         user = await requireServerAuth();
+        // 1. Fetch data on the server for initial render AND security check
+        // This ensures the user has permission before we even load the page
         team = await getTeamById(teamId, user.uid);
     } catch (error) {
         console.error("Error fetching team details:", (error as Error).message);
-        // If the team is not found or user doesn't have access, show a 404 page
         return notFound();
     }
 
-    // We must serialize the data before passing it to the Client Component.
-    // Convert any non-plain objects (like Timestamps or Dates) to strings.
+    // 2. Serialize the data to pass to the client
     const serializableTeam = {
         ...team,
         createdAt: team.createdAt.toString(),
@@ -50,8 +49,12 @@ export default async function IndividualTeamPage({
                 </div>
             </header>
 
-            {/* Pass server-fetched data to the Client Component */}
-            <TeamDetailsClient team={serializableTeam} currentUser={user} />
+            {/* 3. Pass the ID and initial data to the Client Component */}
+            <TeamDetailsClient
+                teamId={team.id}
+                initialTeam={serializableTeam}
+                currentUser={user}
+            />
         </div>
     );
 }
