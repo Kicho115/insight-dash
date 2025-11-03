@@ -30,6 +30,7 @@ export type Invitation = {
     teamId: string;
     teamName: string;
     inviterName: string;
+    userId: string; // UID of the person being invited
     userEmail: string; // Email of the person being invited
     status: "pending" | "accepted" | "declined";
     createdAt: Date;
