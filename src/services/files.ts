@@ -206,3 +206,33 @@ export const getDownloadLink = async (
         return null;
     }
 };
+
+/**
+ * @function updateFileVisibility
+ * @description Calls the secure API route to update a file's visibility.
+ * @param fileId The ID of the file to update.
+ * @param visibility The new visibility setting ("private", "public", or a teamId).
+ * @returns {Promise<{ success: boolean; error?: Error }>}
+ */
+export const updateFileVisibility = async (
+    fileId: string,
+    visibility: string
+): Promise<{ success: boolean; error?: Error }> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}/visibility`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ visibility }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to update visibility.");
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating file visibility:", error);
+        return { success: false, error: error as Error };
+    }
+};

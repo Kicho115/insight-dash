@@ -1,5 +1,11 @@
 export type FileStatus = "Uploaded" | "Processing" | "Ready" | "Error";
 
+export type FilePermission = {
+    type: "user" | "team";
+    id: string; // userId or teamId
+    role: "admin" | "edit" | "view";
+};
+
 export type File = {
     id: string;
     name: string;

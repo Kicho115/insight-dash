@@ -6,7 +6,13 @@ import styles from "./styles.module.css";
 import { File as FileMetadata, FileStatus } from "@/types/file";
 import { ConfirmationModal } from "@/components/confirmationModal";
 import { RenameFileModal } from "@/components/RenameFileModal";
-import { deleteFile, renameFile, getDownloadLink } from "@/services/files";
+import { VisibilityModal } from "@/components/VisibilityModal";
+import {
+    deleteFile,
+    renameFile,
+    getDownloadLink,
+    updateFileVisibility,
+} from "@/services/files";
 import { useAuth } from "@/context/AuthProvider";
 import {
     IoDocumentTextOutline,
@@ -18,6 +24,7 @@ import {
     IoDownloadOutline,
     IoInformationCircleOutline,
     IoPeopleOutline,
+    IoShareSocialOutline,
 } from "react-icons/io5";
 import { Team } from "@/types/user";
 
@@ -151,6 +158,10 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     // State to show/hide status info card
     const [showStatusInfo, setShowStatusInfo] = useState(false);
 
+    const [isChangingVisibility, setIsChangingVisibility] = useState(false);
+    const [fileToChangeVisibility, setFileToChangeVisibility] =
+        useState<SerializedFile | null>(null);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -235,6 +246,34 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
             alert("Error preparing download. Please try again.");
         } finally {
             setIsDownloading(null);
+        }
+    };
+
+    // --- Visibility handlers ---
+    const handleOpenVisibilityModal = (file: SerializedFile) => {
+        setFileToChangeVisibility(file);
+        setActiveActionMenu(null);
+    };
+
+    const handleConfirmVisibilityChange = async (newVisibility: string) => {
+        if (!fileToChangeVisibility) return;
+        setIsChangingVisibility(true);
+        try {
+            const result = await updateFileVisibility(
+                fileToChangeVisibility.id,
+                newVisibility
+            );
+            if (!result.success) {
+                throw result.error || new Error("Failed to update visibility");
+            }
+            router.refresh(); // Refrescar datos
+            setFileToChangeVisibility(null); // Cerrar modal
+        } catch (err) {
+            console.error("Failed to change visibility:", err);
+            // Re-throw para que el modal muestre el error
+            throw err;
+        } finally {
+            setIsChangingVisibility(false);
         }
     };
 
@@ -409,6 +448,23 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                                                                 <IoPencilOutline />
                                                                 Rename
                                                             </button>
+
+                                                            {/* --- Botón de Visibilidad --- */}
+                                                            <button
+                                                                className={`${styles.menuItem} ${styles.visibilityItem}`}
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    handleOpenVisibilityModal(
+                                                                        file
+                                                                    );
+                                                                    e.stopPropagation();
+                                                                }}
+                                                            >
+                                                                <IoShareSocialOutline />
+                                                                Visibility
+                                                            </button>
+
                                                             <button
                                                                 className={`${styles.menuItem} ${styles.deleteItem}`}
                                                                 onClick={(
@@ -451,6 +507,25 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                 onRename={handleConfirmRename}
                 currentName={fileToRename?.displayName || ""}
                 isRenaming={isRenaming}
+            />
+            <VisibilityModal
+                isOpen={!!fileToChangeVisibility}
+                onClose={() => setFileToChangeVisibility(null)}
+                onSave={handleConfirmVisibilityChange}
+                file={
+                    fileToChangeVisibility
+                        ? {
+                              ...fileToChangeVisibility,
+                              createdAt: new Date(
+                                  fileToChangeVisibility.createdAt
+                              ),
+                              updatedAt: new Date(
+                                  fileToChangeVisibility.updatedAt
+                              ),
+                          }
+                        : null
+                }
+                isSaving={isChangingVisibility}
             />
         </>
     );

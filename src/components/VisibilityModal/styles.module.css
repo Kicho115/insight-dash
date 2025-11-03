@@ -1,0 +1,133 @@
+/* Based on RenameFileModal styles for consistency */
+.container {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.iconWrapper {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    background-color: #e0f2fe; /* Light blue */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    font-size: 1.75rem;
+    color: #0284c7; /* Blue */
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.fileName {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.inputGroup {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+/* Wrapper for select + icon */
+.selectWrapper {
+    position: relative;
+    width: 100%;
+}
+
+.selectIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+    font-size: 1.2rem;
+    pointer-events: none;
+}
+
+.selectInput {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 1rem;
+    outline: none;
+    background-color: #ffffff;
+    color: #1a202c;
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em;
+    padding-right: 2.5rem;
+}
+
+.selectInput:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.error {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cancelButton {
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: #f9fafb;
+}
+
+.confirmButton {
+    background-color: #4f46e5;
+    color: #ffffff;
+}
+
+.confirmButton:hover:not(:disabled) {
+    background-color: #4338ca;
+}
