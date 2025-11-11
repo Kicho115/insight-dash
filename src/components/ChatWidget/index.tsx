@@ -20,8 +20,9 @@ export default function ChatWidget({ fileId }: Props) {
       setStatusChecked(true);
       return;
     }
+
     let cancelled = false;
-    let intervalId: number | undefined;
+
     const fetchStatus = async () => {
       try {
         const res = await fetch(`/api/files/${fileId}`, { cache: "no-store" });
@@ -44,11 +45,13 @@ export default function ChatWidget({ fileId }: Props) {
         }
       }
     };
+
     fetchStatus();
-    intervalId = window.setInterval(fetchStatus, 3000);
+    const intervalId = window.setInterval(fetchStatus, 3000);
+
     return () => {
       cancelled = true;
-      if (intervalId) window.clearInterval(intervalId);
+      clearInterval(intervalId);
     };
   }, [fileId]);
 
@@ -61,7 +64,8 @@ export default function ChatWidget({ fileId }: Props) {
     }
   }, [open, messages]);
 
-  if (fileId && (!statusChecked || status !== "Ready")) {
+  const isVisible = !fileId || (statusChecked && status === "Ready");
+  if (!isVisible) {
     return null;
   }
 
