@@ -107,11 +107,11 @@ export async function prepareFileUpload({
  * @returns A list of the file metadata objects.
  */
 export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
-    // Obtener los equipos del usuario
+
     const userTeams = await fetchUserTeams(userId);
     const userTeamIds = userTeams.map((team) => team.id);
 
-    // Definir las 3 consultas
+   
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);
@@ -125,7 +125,7 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
                   .where("teamIds", "array-contains-any", userTeamIds)
             : null;
 
-    // Ejecutar consultas en paralelo
+
     const [userFilesSnapshot, publicFilesSnapshot, teamFilesSnapshot] =
         await Promise.all([
             userFilesQuery.get(),

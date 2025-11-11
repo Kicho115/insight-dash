@@ -45,7 +45,7 @@ export async function POST(req: Request) {
             }
         }
 
-        const data = await askAI({ messages: body.messages, preamble }); // ← aquí el cambio
+        const data = await askAI({ messages: body.messages, preamble }); 
         return NextResponse.json({ success: true, data });
     } catch (err) {
         const msg = err instanceof Error ? err.message : "Internal error";

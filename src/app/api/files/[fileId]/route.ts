@@ -56,7 +56,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        // Manejo de errores centralizado
+        
         const message = (error as Error).message;
         if (message === "Authentication required") {
             return NextResponse.json(

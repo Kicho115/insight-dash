@@ -11,6 +11,47 @@ type Props = { fileId?: string };
 
 export default function ChatWidget({ fileId }: Props) {
   const [open, setOpen] = useState<boolean>(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [statusChecked, setStatusChecked] = useState(false);
+
+  useEffect(() => {
+    if (!fileId) {
+      setStatus("Ready");
+      setStatusChecked(true);
+      return;
+    }
+    let cancelled = false;
+    let intervalId: number | undefined;
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(`/api/files/${fileId}`, { cache: "no-store" });
+        if (!res.ok) {
+          if (!cancelled) {
+            setStatus(null);
+            setStatusChecked(true);
+          }
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setStatus(data?.status ?? null);
+          setStatusChecked(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus(null);
+          setStatusChecked(true);
+        }
+      }
+    };
+    fetchStatus();
+    intervalId = window.setInterval(fetchStatus, 3000);
+    return () => {
+      cancelled = true;
+      if (intervalId) window.clearInterval(intervalId);
+    };
+  }, [fileId]);
+
   const { messages, input, sending, error, canSend, setInput, handleSubmit } = useChat(fileId);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -19,6 +60,10 @@ export default function ChatWidget({ fileId }: Props) {
       viewportRef.current?.scrollTo({ top: viewportRef.current.scrollHeight });
     }
   }, [open, messages]);
+
+  if (fileId && (!statusChecked || status !== "Ready")) {
+    return null;
+  }
 
   return (
     <>
