@@ -87,7 +87,7 @@ type FileWithDates = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
 };
 
 // --- Helper para Visibilidad ---
-const getVisibilityInfo = (file: FileWithDates, teams: Team[]) => {
+const getVisibilityInfo = (file: SerializedFile, teams: Team[]) => {
     if (file.isPublic) {
         return { icon: <IoGlobeOutline />, text: "Public" };
     }
