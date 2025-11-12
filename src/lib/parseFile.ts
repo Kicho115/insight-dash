@@ -27,11 +27,17 @@ export async function parseFile(
 
         if (fileExtension === "csv") {
             const csvData = await response.text();
-            const metadata = getCsvMetadata(csvData);
+            const metadata = await getCsvMetadata(csvData);
+            if (metadata.headers.length === 0) {
+                throw new Error("No headers found.");
+            }
             return metadata;
         } else if (fileExtension === "xlsx" || fileExtension === "xls") {
             const arrayBuffer = await response.arrayBuffer();
-            const metadata = getExcelMetadata(arrayBuffer);
+            const metadata = await getExcelMetadata(arrayBuffer);
+            if (metadata.headers.length === 0) {
+                throw new Error("No headers found.");
+            }
             return metadata;
         } else {
             throw new Error(
