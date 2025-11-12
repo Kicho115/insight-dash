@@ -13,6 +13,7 @@ interface ConfirmationModalProps {
     confirmText?: string;
     cancelText?: string;
     isLoading?: boolean;
+    requireAction?: boolean;
 }
 
 export const ConfirmationModal = ({
@@ -24,11 +25,16 @@ export const ConfirmationModal = ({
     confirmText = "Confirm",
     cancelText = "Cancel",
     isLoading = false,
+    requireAction = false,
 }: ConfirmationModalProps) => {
     if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal 
+            isOpen={isOpen} 
+            onClose={requireAction ? undefined : onClose}
+            hideCloseButton={requireAction}
+        >
             <div className={styles.container}>
                 <div className={styles.iconWrapper}>
                     <IoWarningOutline className={styles.icon} />
