@@ -10,6 +10,7 @@ const statusStyles = {
     Ready: styles.ready,
     Processing: styles.processing,
     Error: styles.error,
+    "Action Required": styles.actionRequired,
 };
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {

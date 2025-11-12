@@ -1,12 +1,21 @@
 import { notFound } from "next/navigation";
+
+// Server-side data fetching
 import { getFileById } from "@/data/files";
 import { getUserById } from "@/data/users";
 import { requireServerAuth } from "@/lib/serverAuth";
+
+// Helpers
 import { formatFirestoreDate } from "@/lib/helpers/formatDate";
 import { formatBytes } from "@/lib/helpers/formatBytes";
+
+// Components
 import { StatusBadge } from "@/components/StatusBadge";
 import ChatWidget from "@/components/ChatWidget";
 import { BsFiletypeXlsx, BsFiletypeCsv } from "react-icons/bs";
+import { MissingHeadersModal } from "./missingHeadersModal";
+
+// CSS
 import styles from "./styles.module.css";
 
 export default async function FilePage({
@@ -43,6 +52,10 @@ export default async function FilePage({
                 </div>
                 <StatusBadge status={file.status ?? "Not ready"} />
             </div>
+
+            {file.status === "Action Required" && (
+                <MissingHeadersModal fileId={fileId} />
+            )}
 
             <div className={styles.summary}>
                 <h2 className={styles.subtitle}>Summary</h2>
