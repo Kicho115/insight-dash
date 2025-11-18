@@ -77,7 +77,7 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
-// --- Helper para Visibilidad ---
+
 const getVisibilityInfo = (file: SerializedFile, teams: Team[]) => {
     if (file.isPublic) {
         return { icon: <IoGlobeOutline />, text: "Public" };

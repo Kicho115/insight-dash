@@ -61,14 +61,23 @@ export async function POST(
                 headers: columnHeaders,
             });
         } catch (processingError) {
-            console.error("Error processing file:", processingError);
+            // If the error is due to missing headers, set status to Action Required
+            if (processingError instanceof Error) {
+                if (processingError.message === "No headers found.") {
+                    await updateFileMetadata(fileId, {
+                        status: "Action Required",
+                    });
+                }
+            } else {
+                console.error("Error processing file:", processingError);
 
-            // Mark as Error if processing fails
-            await updateFileMetadata(fileId, { status: "Error" });
+                // Mark as Error if processing fails
+                await updateFileMetadata(fileId, { status: "Error" });
+            }
 
             return NextResponse.json(
-                { error: "Failed to process file." },
-                { status: 500 }
+                { error: "The file is not in a valid format." },
+                { status: 422 }
             );
         }
     } catch (error) {
