@@ -47,7 +47,7 @@ export async function prepareFileUpload({
     const teamId = !isPublic && !isPrivate ? visibility : null;
 
     const permissions: { [key: string]: string } = {
-        [user.uid]: "admin", // El creador siempre es admin
+        [user.uid]: "admin", // The creator is always admin
     };
     const teamIds: string[] = [];
 
@@ -110,7 +110,7 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
     const userTeams = await fetchUserTeams(userId);
     const userTeamIds = userTeams.map((team) => team.id);
 
-    // Definir las 3 consultas
+    // Define the 3 queries
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);
@@ -118,7 +118,7 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
         .collection("files")
         .where("isPublic", "==", true);
 
-    // Manejar la limitación de 30 elementos en 'array-contains-any'
+    // Handle the 30 element limit in 'array-contains-any'
     const teamFilesQueries: FirebaseFirestore.Query[] = [];
     if (userTeamIds.length > 0) {
         const chunkSize = 30;
@@ -132,13 +132,17 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
         }
     }
 
-    // Ejecutar consultas en paralelo
-    const [userFilesSnapshot, publicFilesSnapshot, teamFilesSnapshot] =
-        await Promise.all([
-            userFilesQuery.get(),
-            publicFilesQuery.get(),
-            teamFilesQuery ? teamFilesQuery.get() : Promise.resolve(null),
-        ]);
+    // Execute queries in parallel
+    const promises = [
+        userFilesQuery.get(),
+        publicFilesQuery.get(),
+        ...teamFilesQueries.map((q) => q.get()),
+    ];
+
+    const snapshots = await Promise.all(promises);
+    const userFilesSnapshot = snapshots[0];
+    const publicFilesSnapshot = snapshots[1];
+    const teamFilesSnapshots = snapshots.slice(2);
 
     const filesMap = new Map<string, FileMetadata>();
 

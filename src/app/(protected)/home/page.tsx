@@ -1,45 +1,37 @@
-"use client";
+import { requireServerAuth } from "@/lib/serverAuth";
+import { getFilesForUser } from "@/data/files";
+import { HomeClient } from "./HomeClient";
 
-// React imports
-import { useState, useEffect } from "react";
+export const dynamic = "force-dynamic";
 
-// Import CSS
-import styles from "./styles.module.css";
+export default async function HomePage() {
+    const user = await requireServerAuth();
 
-// Import user
-import { useAuth } from "@/context/AuthProvider";
+    const files = await getFilesForUser(user.uid);
 
-const HomePage = () => {
-    const [greeting, setGreeting] = useState("");
-    const { user } = useAuth();
+    // Serialize dates and get recent files (last 5)
+    const recentFiles = files
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+        .slice(0, 5)
+        .map((file) => ({
+            ...file,
+            createdAt: file.createdAt.toISOString(),
+            updatedAt: file.updatedAt.toISOString(),
+        }));
 
-    useEffect(() => {
-        const getGreeting = () => {
-            const hour = new Date().getHours();
-
-            if (hour >= 5 && hour < 12) {
-                return "Good Morning";
-            } else if (hour >= 12 && hour < 19) {
-                return "Good Afternoon";
-            } else {
-                return "Good Evening";
-            }
-        };
-
-        setGreeting(getGreeting());
-    }, []);
+    // Get files that need attention (Error or Action Required)
+    const filesNeedingAttention = files
+        .filter((file) => file.status === "Error" || file.status === "Action Required")
+        .map((file) => ({
+            ...file,
+            createdAt: file.createdAt.toISOString(),
+            updatedAt: file.updatedAt.toISOString(),
+        }));
 
     return (
-        <div className={styles.container}>
-            <div className={styles.greetingWrapper}>
-                <div className={styles.greetingContent}>
-                    <h1 className={styles.greetingText}>{greeting}</h1>
-                    <p className={styles.userName}>{user?.name}</p>
-                    <div className={styles.underline}></div>
-                </div>
-            </div>
-        </div>
+        <HomeClient
+            recentFiles={recentFiles}
+            filesNeedingAttention={filesNeedingAttention}
+        />
     );
-};
-
-export default HomePage;
+}
