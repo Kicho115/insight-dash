@@ -92,6 +92,13 @@ export default async function FilePage({
                 )}
             </div>
 
+            <div className={styles.dashboardHint}>
+                <p>
+                    <strong>Ready to visualize?</strong> Chat with your data to explore insights,
+                    then ask the assistant to generate a custom dashboard with charts and KPIs.
+                </p>
+            </div>
+
             {/* Floating chat only on file page; server will add metadata context */}
             <ChatWidget fileId={fileId} />
         </div>
