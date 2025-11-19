@@ -111,27 +111,39 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
     const userTeams = await fetchUserTeams(userId);
     const userTeamIds = userTeams.map((team) => team.id);
 
-    // Definir las 3 consultas
+    // Definir las consultas
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);
     const publicFilesQuery = dbAdmin
         .collection("files")
         .where("isPublic", "==", true);
-    const teamFilesQuery =
-        userTeamIds.length > 0
-            ? dbAdmin
-                  .collection("files")
-                  .where("teamIds", "array-contains-any", userTeamIds)
-            : null;
+
+    // Manejar la limitación de 30 elementos en 'array-contains-any'
+    const teamFilesQueries: FirebaseFirestore.Query[] = [];
+    if (userTeamIds.length > 0) {
+        const chunkSize = 30;
+        for (let i = 0; i < userTeamIds.length; i += chunkSize) {
+            const chunk = userTeamIds.slice(i, i + chunkSize);
+            teamFilesQueries.push(
+                dbAdmin
+                    .collection("files")
+                    .where("teamIds", "array-contains-any", chunk)
+            );
+        }
+    }
 
     // Ejecutar consultas en paralelo
-    const [userFilesSnapshot, publicFilesSnapshot, teamFilesSnapshot] =
-        await Promise.all([
-            userFilesQuery.get(),
-            publicFilesQuery.get(),
-            teamFilesQuery ? teamFilesQuery.get() : Promise.resolve(null),
-        ]);
+    const promises = [
+        userFilesQuery.get(),
+        publicFilesQuery.get(),
+        ...teamFilesQueries.map((q) => q.get()),
+    ];
+
+    const snapshots = await Promise.all(promises);
+    const userFilesSnapshot = snapshots[0];
+    const publicFilesSnapshot = snapshots[1];
+    const teamFilesSnapshots = snapshots.slice(2);
 
     const filesMap = new Map<string, FileMetadata>();
 
@@ -149,9 +161,9 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
 
     userFilesSnapshot.forEach(processDoc);
     publicFilesSnapshot.forEach(processDoc);
-    if (teamFilesSnapshot) {
-        teamFilesSnapshot.forEach(processDoc);
-    }
+    teamFilesSnapshots.forEach((snapshot) => {
+        snapshot.forEach(processDoc);
+    });
 
     const files = Array.from(filesMap.values());
     files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
