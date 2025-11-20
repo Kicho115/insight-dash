@@ -122,10 +122,6 @@ export async function getExcelMetadata(
         // If the headers is an empty array, the file is not in a valid format
         if (!headers) {
             throw new Error("Error generating headers from genkit flow");
-        } else if (headers.length === 0) {
-            headers.push(
-                "There are no headers in this file. This file is not in a valid format."
-            );
         }
 
         const sheets: SheetInfo[] = workbook.SheetNames.map((sheetName) => {

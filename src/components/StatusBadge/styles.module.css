@@ -25,3 +25,8 @@
     background-color: #e0e7ff;
     color: #3730a3;
 }
+
+.actionRequired {
+    background-color: #fce7f3;
+    color: #9d174d;
+}

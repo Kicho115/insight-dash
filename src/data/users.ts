@@ -87,8 +87,13 @@ export async function updateUserName(
     uid: string,
     newName: string
 ): Promise<void> {
+    const MAX_LENGTH = 50;
+
     if (!newName || newName.trim().length === 0) {
         throw new Error("Name cannot be empty.");
+    }
+    if (newName.length > MAX_LENGTH) {
+        throw new Error(`Name cannot exceed ${MAX_LENGTH} characters.`);
     }
 
     const userRef = dbAdmin.collection("users").doc(uid);

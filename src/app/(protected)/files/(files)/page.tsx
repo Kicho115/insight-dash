@@ -1,9 +1,9 @@
 import styles from "./styles.module.css";
 import { requireServerAuth } from "@/lib/serverAuth";
-import { getFilesForUser } from "@/data/files"; // <-- Importamos la "receta" del DAL
+import { getFilesForUser } from "@/data/files";
 import { FilesTable } from "@/components/FilesTable";
 import { AddFileButton } from "./AddFileButton";
-import { getTeamsForUser } from "@/data/teams"; // <-- Importamos la "receta" de equipos
+import { getTeamsForUser } from "@/data/teams"; 
 
 // This line ensures this page is always dynamic
 export const dynamic = "force-dynamic";

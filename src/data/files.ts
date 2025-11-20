@@ -47,7 +47,7 @@ export async function prepareFileUpload({
     const teamId = !isPublic && !isPrivate ? visibility : null;
 
     const permissions: { [key: string]: string } = {
-        [user.uid]: "admin", // El creador siempre es admin
+        [user.uid]: "admin", // The creator is always admin
     };
     const teamIds: string[] = [];
 
@@ -107,11 +107,10 @@ export async function prepareFileUpload({
  * @returns A list of the file metadata objects.
  */
 export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
-    // Obtener los equipos del usuario
     const userTeams = await fetchUserTeams(userId);
     const userTeamIds = userTeams.map((team) => team.id);
 
-    // Definir las consultas
+    // Define the 3 queries
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);
@@ -119,7 +118,7 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
         .collection("files")
         .where("isPublic", "==", true);
 
-    // Manejar la limitación de 30 elementos en 'array-contains-any'
+    // Handle the 30 element limit in 'array-contains-any'
     const teamFilesQueries: FirebaseFirestore.Query[] = [];
     if (userTeamIds.length > 0) {
         const chunkSize = 30;
@@ -133,7 +132,7 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
         }
     }
 
-    // Ejecutar consultas en paralelo
+    // Execute queries in parallel
     const promises = [
         userFilesQuery.get(),
         publicFilesQuery.get(),
@@ -288,6 +287,14 @@ export async function updateFileName(
     userId: string,
     newDisplayName: string
 ): Promise<void> {
+    const MAX_LENGTH = 50;
+    if (!newDisplayName || newDisplayName.trim().length === 0) {
+        throw new Error("Display name cannot be empty.");
+    }
+    if (newDisplayName.length > MAX_LENGTH) {
+        throw new Error(`Display name cannot exceed ${MAX_LENGTH} characters.`);
+    }
+
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
     const fileDoc = await fileDocRef.get();
 
