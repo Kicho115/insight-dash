@@ -16,10 +16,24 @@ export const ProfileSettings = ({ user }: ProfileSettingsProps) => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
+    const MAX_LENGTH = 50;
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (name === user.name) {
+        const trimmedName = name.trim();
+
+        if (trimmedName === user.name) {
             setError("You haven't changed your name.");
+            return;
+        }
+        if (!trimmedName) {
+            setError("Name cannot be empty.");
+            return;
+        }
+        if (trimmedName.length > MAX_LENGTH) {
+            setError(
+                `Name is too long (${trimmedName.length}/${MAX_LENGTH} chars).`
+            );
             return;
         }
 
