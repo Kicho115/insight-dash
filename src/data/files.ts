@@ -287,6 +287,14 @@ export async function updateFileName(
     userId: string,
     newDisplayName: string
 ): Promise<void> {
+    const MAX_LENGTH = 50;
+    if (!newDisplayName || newDisplayName.trim().length === 0) {
+        throw new Error("Display name cannot be empty.");
+    }
+    if (newDisplayName.length > MAX_LENGTH) {
+        throw new Error(`Display name cannot exceed ${MAX_LENGTH} characters.`);
+    }
+
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
     const fileDoc = await fileDocRef.get();
 
