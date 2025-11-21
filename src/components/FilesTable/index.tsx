@@ -28,6 +28,9 @@ import {
 } from "react-icons/io5";
 import { Team } from "@/types/user";
 
+// Hooks
+import { useRealtimeFiles } from "@/hooks/useRealtimeFiles";
+
 // Helper functions (could be moved to a 'utils' file later)
 const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return "0 Bytes";
@@ -77,8 +80,14 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
+// Type allowing both Date and string for compatibility
+type FileWithDates = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
+    createdAt: Date | string;
+    updatedAt: Date | string;
+};
 
-const getVisibilityInfo = (file: SerializedFile, teams: Team[]) => {
+// --- Helper para Visibilidad ---
+const getVisibilityInfo = (file: FileWithDates, teams: Team[]) => {
     if (file.isPublic) {
         return { icon: <IoGlobeOutline />, text: "Public" };
     }
@@ -108,42 +117,28 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [files, setFiles] = useState(initialFiles);
     const [teams, setTeams] = useState(userTeams);
 
-    // This useEffect ensures the table updates if the server passes new props
-    useEffect(() => {
-        setFiles(initialFiles);
-    }, [initialFiles]);
+    // Use realtime hook to manage files state
+    const files = useRealtimeFiles(initialFiles, user, teams);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
 
     useEffect(() => {
         setTeams(userTeams);
     }, [userTeams]);
 
-    // POLLING FOR STATUS UPDATES
-    useEffect(() => {
-        const filesAreProcessing = files.some(
-            (file) => file.status === "Processing" || file.status === "Uploaded"
-        );
-
-        if (filesAreProcessing) {
-            const intervalId = setInterval(() => {
-                router.refresh();
-            }, 5000); // 5 seconds
-
-            return () => clearInterval(intervalId);
-        }
-    }, [files, router]);
-
     // Deletion State
     const [isDeleting, setIsDeleting] = useState(false);
-    const [fileToDelete, setFileToDelete] = useState<SerializedFile | null>(
+    const [fileToDelete, setFileToDelete] = useState<FileWithDates | null>(
         null
     );
 
     // Rename State
     const [isRenaming, setIsRenaming] = useState(false);
-    const [fileToRename, setFileToRename] = useState<SerializedFile | null>(
+    const [fileToRename, setFileToRename] = useState<FileWithDates | null>(
         null
     );
 
@@ -160,7 +155,20 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
 
     const [isChangingVisibility, setIsChangingVisibility] = useState(false);
     const [fileToChangeVisibility, setFileToChangeVisibility] =
-        useState<SerializedFile | null>(null);
+        useState<FileWithDates | null>(null);
+
+    // Calculate pagination values
+    const totalPages = Math.ceil(files.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedFiles = files.slice(startIndex, endIndex);
+
+    // Reset to page 1 when files change significantly
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [totalPages, currentPage]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -177,7 +185,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     }, []);
 
     // --- Delete Handlers ---
-    const handleOpenDeleteModal = (file: SerializedFile) => {
+    const handleOpenDeleteModal = (file: FileWithDates) => {
         setFileToDelete(file);
         setActiveActionMenu(null);
     };
@@ -189,8 +197,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
         const result = await deleteFile(fileToDelete.id);
 
         if (result.success) {
-            // Tell Next.js to refresh server data
-            router.refresh();
+            // No need to refresh router, onSnapshot will update the UI
         } else {
             let errorMessage = "Failed to delete the file.";
             if (result.error?.message.includes("Forbidden")) {
@@ -205,7 +212,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     };
 
     // --- Rename Handlers ---
-    const handleOpenRenameModal = (file: SerializedFile) => {
+    const handleOpenRenameModal = (file: FileWithDates) => {
         setFileToRename(file);
         setActiveActionMenu(null);
     };
@@ -218,7 +225,6 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                 throw result.error || new Error("Rename failed");
             }
             // Success! onSnapshot will update the table. Close modal.
-            router.refresh();
             setFileToRename(null);
         } catch (err) {
             console.error("Rename failed:", err);
@@ -230,7 +236,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     };
 
     // --- Download Handler ---
-    const handleDownload = async (file: SerializedFile) => {
+    const handleDownload = async (file: FileWithDates) => {
         setActiveActionMenu(null);
         setIsDownloading(file.id);
         try {
@@ -250,7 +256,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     };
 
     // --- Visibility handlers ---
-    const handleOpenVisibilityModal = (file: SerializedFile) => {
+    const handleOpenVisibilityModal = (file: FileWithDates) => {
         setFileToChangeVisibility(file);
         setActiveActionMenu(null);
     };
@@ -266,7 +272,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
             if (!result.success) {
                 throw result.error || new Error("Failed to update visibility");
             }
-            router.refresh(); // Refrescar datos
+            // No need to refresh, onSnapshot handles it
             setFileToChangeVisibility(null); // Cerrar modal
         } catch (err) {
             console.error("Failed to change visibility:", err);
@@ -350,7 +356,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {files.map((file) => {
+                        {paginatedFiles.map((file) => {
                             const visibility = getVisibilityInfo(file, teams);
                             const canManage = user
                                 ? user.id === file.creatorId ||
@@ -490,6 +496,120 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                         })}
                     </tbody>
                 </table>
+
+                {totalPages > 1 && (
+                    <div className={styles.paginationContainer}>
+                        <div className={styles.paginationInfo}>
+                            Showing {startIndex + 1}-
+                            {Math.min(endIndex, files.length)} of {files.length}{" "}
+                            files
+                        </div>
+                        <div className={styles.paginationControls}>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                                aria-label="First page"
+                            >
+                                First
+                            </button>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        Math.max(1, prev - 1)
+                                    )
+                                }
+                                disabled={currentPage === 1}
+                                aria-label="Previous page"
+                            >
+                                Previous
+                            </button>
+
+                            <div className={styles.pageNumbers}>
+                                {Array.from(
+                                    { length: totalPages },
+                                    (_, i) => i + 1
+                                )
+                                    .filter((page) => {
+                                        // Show first page, last page, current page, and pages around current
+                                        return (
+                                            page === 1 ||
+                                            page === totalPages ||
+                                            Math.abs(page - currentPage) <= 1
+                                        );
+                                    })
+                                    .map((page, index, array) => {
+                                        // Add ellipsis if there's a gap
+                                        const prevPage = array[index - 1];
+                                        const showEllipsis =
+                                            prevPage && page - prevPage > 1;
+
+                                        return (
+                                            <div
+                                                key={page}
+                                                style={{
+                                                    display: "flex",
+                                                    gap: "4px",
+                                                }}
+                                            >
+                                                {showEllipsis && (
+                                                    <span
+                                                        className={
+                                                            styles.pageEllipsis
+                                                        }
+                                                    >
+                                                        ...
+                                                    </span>
+                                                )}
+                                                <button
+                                                    className={`${
+                                                        styles.pageNumber
+                                                    } ${
+                                                        currentPage === page
+                                                            ? styles.pageNumberActive
+                                                            : ""
+                                                    }`}
+                                                    onClick={() =>
+                                                        setCurrentPage(page)
+                                                    }
+                                                    aria-label={`Page ${page}`}
+                                                    aria-current={
+                                                        currentPage === page
+                                                            ? "page"
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {page}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        Math.min(totalPages, prev + 1)
+                                    )
+                                }
+                                disabled={currentPage === totalPages}
+                                aria-label="Next page"
+                            >
+                                Next
+                            </button>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage === totalPages}
+                                aria-label="Last page"
+                            >
+                                Last
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <ConfirmationModal
