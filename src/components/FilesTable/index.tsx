@@ -122,6 +122,10 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     // Use realtime hook to manage files state
     const files = useRealtimeFiles(initialFiles, user, teams);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
+
     useEffect(() => {
         setTeams(userTeams);
     }, [userTeams]);
@@ -152,6 +156,19 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     const [isChangingVisibility, setIsChangingVisibility] = useState(false);
     const [fileToChangeVisibility, setFileToChangeVisibility] =
         useState<FileWithDates | null>(null);
+
+    // Calculate pagination values
+    const totalPages = Math.ceil(files.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedFiles = files.slice(startIndex, endIndex);
+
+    // Reset to page 1 when files change significantly
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [totalPages, currentPage]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -339,7 +356,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {files.map((file) => {
+                        {paginatedFiles.map((file) => {
                             const visibility = getVisibilityInfo(file, teams);
                             const canManage = user
                                 ? user.id === file.creatorId ||
@@ -479,6 +496,120 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                         })}
                     </tbody>
                 </table>
+
+                {totalPages > 1 && (
+                    <div className={styles.paginationContainer}>
+                        <div className={styles.paginationInfo}>
+                            Showing {startIndex + 1}-
+                            {Math.min(endIndex, files.length)} of {files.length}{" "}
+                            files
+                        </div>
+                        <div className={styles.paginationControls}>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                                aria-label="First page"
+                            >
+                                First
+                            </button>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        Math.max(1, prev - 1)
+                                    )
+                                }
+                                disabled={currentPage === 1}
+                                aria-label="Previous page"
+                            >
+                                Previous
+                            </button>
+
+                            <div className={styles.pageNumbers}>
+                                {Array.from(
+                                    { length: totalPages },
+                                    (_, i) => i + 1
+                                )
+                                    .filter((page) => {
+                                        // Show first page, last page, current page, and pages around current
+                                        return (
+                                            page === 1 ||
+                                            page === totalPages ||
+                                            Math.abs(page - currentPage) <= 1
+                                        );
+                                    })
+                                    .map((page, index, array) => {
+                                        // Add ellipsis if there's a gap
+                                        const prevPage = array[index - 1];
+                                        const showEllipsis =
+                                            prevPage && page - prevPage > 1;
+
+                                        return (
+                                            <div
+                                                key={page}
+                                                style={{
+                                                    display: "flex",
+                                                    gap: "4px",
+                                                }}
+                                            >
+                                                {showEllipsis && (
+                                                    <span
+                                                        className={
+                                                            styles.pageEllipsis
+                                                        }
+                                                    >
+                                                        ...
+                                                    </span>
+                                                )}
+                                                <button
+                                                    className={`${
+                                                        styles.pageNumber
+                                                    } ${
+                                                        currentPage === page
+                                                            ? styles.pageNumberActive
+                                                            : ""
+                                                    }`}
+                                                    onClick={() =>
+                                                        setCurrentPage(page)
+                                                    }
+                                                    aria-label={`Page ${page}`}
+                                                    aria-current={
+                                                        currentPage === page
+                                                            ? "page"
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {page}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        Math.min(totalPages, prev + 1)
+                                    )
+                                }
+                                disabled={currentPage === totalPages}
+                                aria-label="Next page"
+                            >
+                                Next
+                            </button>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage === totalPages}
+                                aria-label="Last page"
+                            >
+                                Last
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <ConfirmationModal
