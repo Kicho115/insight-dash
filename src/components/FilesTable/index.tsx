@@ -28,6 +28,9 @@ import {
 } from "react-icons/io5";
 import { Team } from "@/types/user";
 
+// Hooks
+import { useRealtimeFiles } from "@/hooks/useRealtimeFiles";
+
 // Helper functions (could be moved to a 'utils' file later)
 const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return "0 Bytes";
@@ -77,8 +80,14 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
+// Type allowing both Date and string for compatibility
+type FileWithDates = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
+    createdAt: Date | string;
+    updatedAt: Date | string;
+};
+
 // --- Helper para Visibilidad ---
-const getVisibilityInfo = (file: SerializedFile, teams: Team[]) => {
+const getVisibilityInfo = (file: FileWithDates, teams: Team[]) => {
     if (file.isPublic) {
         return { icon: <IoGlobeOutline />, text: "Public" };
     }
@@ -108,42 +117,24 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [files, setFiles] = useState(initialFiles);
     const [teams, setTeams] = useState(userTeams);
 
-    // This useEffect ensures the table updates if the server passes new props
-    useEffect(() => {
-        setFiles(initialFiles);
-    }, [initialFiles]);
+    // Use realtime hook to manage files state
+    const files = useRealtimeFiles(initialFiles, user, teams);
 
     useEffect(() => {
         setTeams(userTeams);
     }, [userTeams]);
 
-    // POLLING FOR STATUS UPDATES
-    useEffect(() => {
-        const filesAreProcessing = files.some(
-            (file) => file.status === "Processing" || file.status === "Uploaded"
-        );
-
-        if (filesAreProcessing) {
-            const intervalId = setInterval(() => {
-                router.refresh();
-            }, 5000); // 5 seconds
-
-            return () => clearInterval(intervalId);
-        }
-    }, [files, router]);
-
     // Deletion State
     const [isDeleting, setIsDeleting] = useState(false);
-    const [fileToDelete, setFileToDelete] = useState<SerializedFile | null>(
+    const [fileToDelete, setFileToDelete] = useState<FileWithDates | null>(
         null
     );
 
     // Rename State
     const [isRenaming, setIsRenaming] = useState(false);
-    const [fileToRename, setFileToRename] = useState<SerializedFile | null>(
+    const [fileToRename, setFileToRename] = useState<FileWithDates | null>(
         null
     );
 
@@ -160,7 +151,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
 
     const [isChangingVisibility, setIsChangingVisibility] = useState(false);
     const [fileToChangeVisibility, setFileToChangeVisibility] =
-        useState<SerializedFile | null>(null);
+        useState<FileWithDates | null>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -177,7 +168,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     }, []);
 
     // --- Delete Handlers ---
-    const handleOpenDeleteModal = (file: SerializedFile) => {
+    const handleOpenDeleteModal = (file: FileWithDates) => {
         setFileToDelete(file);
         setActiveActionMenu(null);
     };
@@ -189,8 +180,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
         const result = await deleteFile(fileToDelete.id);
 
         if (result.success) {
-            // Tell Next.js to refresh server data
-            router.refresh();
+            // No need to refresh router, onSnapshot will update the UI
         } else {
             let errorMessage = "Failed to delete the file.";
             if (result.error?.message.includes("Forbidden")) {
@@ -205,7 +195,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     };
 
     // --- Rename Handlers ---
-    const handleOpenRenameModal = (file: SerializedFile) => {
+    const handleOpenRenameModal = (file: FileWithDates) => {
         setFileToRename(file);
         setActiveActionMenu(null);
     };
@@ -218,7 +208,6 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
                 throw result.error || new Error("Rename failed");
             }
             // Success! onSnapshot will update the table. Close modal.
-            router.refresh();
             setFileToRename(null);
         } catch (err) {
             console.error("Rename failed:", err);
@@ -230,7 +219,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     };
 
     // --- Download Handler ---
-    const handleDownload = async (file: SerializedFile) => {
+    const handleDownload = async (file: FileWithDates) => {
         setActiveActionMenu(null);
         setIsDownloading(file.id);
         try {
@@ -250,7 +239,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     };
 
     // --- Visibility handlers ---
-    const handleOpenVisibilityModal = (file: SerializedFile) => {
+    const handleOpenVisibilityModal = (file: FileWithDates) => {
         setFileToChangeVisibility(file);
         setActiveActionMenu(null);
     };
@@ -266,7 +255,7 @@ export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
             if (!result.success) {
                 throw result.error || new Error("Failed to update visibility");
             }
-            router.refresh(); // Refrescar datos
+            // No need to refresh, onSnapshot handles it
             setFileToChangeVisibility(null); // Cerrar modal
         } catch (err) {
             console.error("Failed to change visibility:", err);
