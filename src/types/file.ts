@@ -1,4 +1,9 @@
-export type FileStatus = "Uploaded" | "Processing" | "Ready" | "Error";
+export type FileStatus =
+    | "Uploaded"
+    | "Processing"
+    | "Ready"
+    | "Error"
+    | "Action Required";
 
 export type FilePermission = {
     type: "user" | "team";

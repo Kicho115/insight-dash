@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { requireServerAuth } from "@/lib/serverAuth";
-import { updateFileVisibility } from "@/data/files"; // Importamos la nueva "receta"
+import { updateFileVisibility } from "@/data/files"; 
 
 /**
  * @route PATCH /api/files/[fileId]/visibility
