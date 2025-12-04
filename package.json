@@ -10,11 +10,11 @@
         "genkit": "genkit start -- pnpm next dev"
     },
     "dependencies": {
-        "@genkit-ai/google-genai": "^1.20.0",
-        "firebase": "^12.1.0",
-        "firebase-admin": "^13.5.0",
-        "genkit": "^1.21.0",
-        "next": "15.5.0",
+        "@genkit-ai/google-genai": "^1.25.0",
+        "firebase": "^12.6.0",
+        "firebase-admin": "^13.6.0",
+        "genkit": "^1.25.0",
+        "next": "15.5.7",
         "react": "19.1.0",
         "react-dom": "19.1.0",
         "react-icons": "^5.5.0",
@@ -23,12 +23,12 @@
         "xlsx": "^0.18.5"
     },
     "devDependencies": {
-        "@eslint/eslintrc": "^3.3.1",
-        "@types/node": "^20.19.23",
-        "@types/react": "^19.2.2",
-        "@types/react-dom": "^19.2.2",
+        "@eslint/eslintrc": "^3.3.3",
+        "@types/node": "^20.19.25",
+        "@types/react": "^19.2.7",
+        "@types/react-dom": "^19.2.3",
         "@types/uuid": "^9.0.8",
-        "eslint": "^9.38.0",
+        "eslint": "^9.39.1",
         "eslint-config-next": "15.5.0",
         "typescript": "^5.9.3"
     }
