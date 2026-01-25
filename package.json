@@ -7,7 +7,9 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "genkit": "genkit start -- pnpm next dev"
+        "genkit": "genkit start -- pnpm next dev",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
         "@genkit-ai/google-genai": "^1.25.0",
@@ -30,6 +32,7 @@
         "@types/uuid": "^9.0.8",
         "eslint": "^9.39.1",
         "eslint-config-next": "15.5.0",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
     }
 }
