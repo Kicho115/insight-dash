@@ -7,19 +7,19 @@ import { v4 as uuidv4 } from "uuid";
 import {
     File as FileMetadata,
     FileStatus,
-    FilePermission,
     ExcelMetadata,
     CsvMetadata,
 } from "@/types/file";
 import { Team } from "@/types/user";
 import { getTeamsForUser as fetchUserTeams, getTeamsForUser } from "./teams";
+import { normalizePermissions } from "@/lib/helpers/permissions";
 
 interface PrepareUploadOptions {
     fileName: string;
     fileType: string;
     fileSize: number;
     visibility: string;
-    displayName: string;
+    displayName?: string;
     user: { uid: string };
 }
 
@@ -216,9 +216,23 @@ export async function getFileById(
     }
 
     const fileData = fileDoc.data() as FileMetadata;
+    const permissions = normalizePermissions(fileData.permissions);
 
-    // Security check: Allow access if the file is public or the user is the creator.
-    const hasPermission = fileData.isPublic || fileData.creatorId === userId;
+    let hasPermission = false;
+
+    if (fileData.isPublic) {
+        hasPermission = true;
+    } else if (fileData.creatorId === userId) {
+        hasPermission = true;
+    } else if (permissions[userId]) {
+        hasPermission = true;
+    } else if (fileData.teamIds && fileData.teamIds.length > 0) {
+        const userTeams = await getTeamsForUser(userId);
+        const userTeamIds = userTeams.map((team) => team.id);
+        hasPermission = fileData.teamIds.some((teamId) =>
+            userTeamIds.includes(teamId)
+        );
+    }
 
     if (!hasPermission) {
         throw new Error("User does not have permission to view this file.");
@@ -393,9 +407,10 @@ export async function updateFileVisibility(
     }
 
     const fileData = fileDoc.data() as FileMetadata;
+    const currentPermissions = normalizePermissions(fileData.permissions);
 
     // Security Check: Only allow creator/admin to change visibility
-    const userRole = fileData.permissions[userId];
+    const userRole = currentPermissions[userId];
     if (fileData.creatorId !== userId && userRole !== "admin") {
         throw new Error(
             "You do not have permission to change this file's visibility."
@@ -407,9 +422,10 @@ export async function updateFileVisibility(
     const isPrivate = newVisibility === "private";
     const teamId = !isPublic && !isPrivate ? newVisibility : null;
 
-    const newPermissions: FilePermission[] = [
-        { type: "user", id: userId, role: "admin" }, // Keep the owner as admin
-    ];
+    const newPermissions: Record<string, "admin" | "edit" | "view"> = {
+        ...currentPermissions,
+        [userId]: "admin",
+    };
     const newTeamIds: string[] = [];
 
     if (teamId) {
@@ -422,8 +438,6 @@ export async function updateFileVisibility(
                 "You cannot share a file with a team you are not a member of."
             );
         }
-        // Add the new team permission
-        newPermissions.push({ type: "team", id: teamId, role: "view" });
         newTeamIds.push(teamId);
     }
 
