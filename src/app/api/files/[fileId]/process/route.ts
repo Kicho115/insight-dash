@@ -8,6 +8,9 @@ import { NextResponse } from "next/server";
 import { updateFileMetadata } from "@/data/files";
 import { parseFile } from "@/lib/parseFile";
 import { summarizeFileFlow } from "@/services/genkit/flows/summarizeFile";
+import { parseJson } from "@/lib/api/validation";
+import { fileProcessSchema } from "@/lib/api/schemas";
+import { handleApiError } from "@/lib/api/errorHandler";
 
 /**
  * @function POST
@@ -22,15 +25,10 @@ export async function POST(
         const paramsResolved = await params;
         fileId = paramsResolved.fileId;
 
-        const body = await request.json();
-        const { filePath, fileName } = body;
-
-        if (!filePath || !fileName) {
-            return NextResponse.json(
-                { error: "Missing filePath or fileName." },
-                { status: 400 }
-            );
-        }
+        const { filePath, fileName } = await parseJson(
+            request,
+            fileProcessSchema
+        );
 
         // Set status to Processing
         await updateFileMetadata(fileId, { status: "Processing" });
@@ -91,9 +89,6 @@ export async function POST(
             }
         }
 
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
+        return handleApiError(error);
     }
 }

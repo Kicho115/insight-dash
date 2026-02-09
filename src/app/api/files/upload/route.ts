@@ -5,6 +5,9 @@
 import { NextResponse } from "next/server";
 import { requireServerAuth } from "@/lib/serverAuth";
 import { prepareFileUpload } from "@/data/files";
+import { parseJson } from "@/lib/api/validation";
+import { createFileUploadSchema } from "@/lib/api/schemas";
+import { handleApiError } from "@/lib/api/errorHandler";
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -18,7 +21,10 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 export async function POST(request: Request) {
     try {
         const user = await requireServerAuth();
-        const body = await request.json();
+        const body = await parseJson(
+            request,
+            createFileUploadSchema()
+        );
 
         if (body.fileSize > MAX_FILE_SIZE_BYTES) {
             return NextResponse.json(
@@ -35,15 +41,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ signedUrl, fileId, filePath });
     } catch (error) {
         console.error("Error in prepare-upload API route:", error);
-        if ((error as Error).message === "Authentication required") {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
+        return handleApiError(error);
     }
 }
