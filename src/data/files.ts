@@ -19,7 +19,7 @@ interface PrepareUploadOptions {
     fileType: string;
     fileSize: number;
     visibility: string;
-    displayName: string;
+    displayName?: string;
     user: { uid: string };
 }
 

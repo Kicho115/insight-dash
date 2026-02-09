@@ -1,8 +1,6 @@
 // src/lib/helpers/fileContext.ts
 import { formatBytes } from "@/lib/helpers/formatBytes";
 
-type Maybe<T> = T | null | undefined;
-
 export interface FileMetaForContext {
   id: string;
   name: string;
