@@ -114,6 +114,24 @@ export async function acceptInvitation(
             status: "accepted",
         });
     });
+
+    // Sync teamMemberIds on files shared with this team
+    const inviteDoc = await inviteRef.get();
+    const invitation = inviteDoc.data() as Invitation;
+    const filesSnapshot = await dbAdmin
+        .collection("files")
+        .where("teamIds", "array-contains", invitation.teamId)
+        .get();
+
+    if (!filesSnapshot.empty) {
+        const batch = dbAdmin.batch();
+        filesSnapshot.docs.forEach((doc) => {
+            batch.update(doc.ref, {
+                teamMemberIds: FieldValue.arrayUnion(user.id),
+            });
+        });
+        await batch.commit();
+    }
 }
 
 /**

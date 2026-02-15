@@ -5,7 +5,8 @@ interface StatusBadgeProps {
     status: FileStatus;
 }
 
-const statusStyles = {
+const statusStyles: Record<FileStatus, string> = {
+    Pending: styles.processing,
     Uploaded: styles.notReady,
     Ready: styles.ready,
     Processing: styles.processing,

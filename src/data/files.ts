@@ -50,6 +50,7 @@ export async function prepareFileUpload({
         [user.uid]: "admin", // The creator is always admin
     };
     const teamIds: string[] = [];
+    let teamMemberIds: string[] = [];
 
     if (teamId) {
         // Verify the user is actually a member of this team before allowing
@@ -63,6 +64,7 @@ export async function prepareFileUpload({
         }
 
         teamIds.push(teamId);
+        teamMemberIds = team.memberIds;
     }
 
     const fileId = uuidv4();
@@ -79,9 +81,10 @@ export async function prepareFileUpload({
         creatorId: user.uid,
         permissions: permissions,
         teamIds: teamIds,
+        teamMemberIds: teamMemberIds,
         isLocked: false,
         url: "",
-        status: "Uploaded" as FileStatus,
+        status: "Pending" as FileStatus,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
@@ -99,6 +102,99 @@ export async function prepareFileUpload({
     const [signedUrl] = await file.getSignedUrl(options);
 
     return { signedUrl, fileId, filePath };
+}
+
+/**
+ * Confirms a file upload by verifying the file exists in Storage
+ * and its size matches the declared size.
+ * Transitions status from "Pending" to "Uploaded".
+ * @param fileId - The ID of the file to confirm.
+ * @param userId - The UID of the user confirming the upload.
+ * @returns The confirmed file's ID and path.
+ */
+export async function confirmFileUpload(
+    fileId: string,
+    userId: string
+): Promise<{ confirmed: boolean; fileId: string; filePath: string }> {
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+    const fileDoc = await fileDocRef.get();
+
+    if (!fileDoc.exists) {
+        throw new Error("File not found.");
+    }
+
+    const fileData = fileDoc.data() as FileMetadata;
+
+    if (fileData.creatorId !== userId) {
+        throw new Error("User does not have permission to confirm this upload.");
+    }
+
+    if (fileData.status !== "Pending") {
+        throw new Error("File is not in Pending status.");
+    }
+
+    const bucket = getStorage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
+    const storageFile = bucket.file(fileData.path);
+
+    let storageMetadata: { size: string | number };
+    try {
+        const [fileMetadata] = await storageFile.getMetadata();
+        storageMetadata = fileMetadata as { size: string | number };
+    } catch {
+        await fileDocRef.delete();
+        throw new Error("File does not exist in Storage. Metadata cleaned up.");
+    }
+
+    const actualSize = Number(storageMetadata.size);
+    if (actualSize !== fileData.size) {
+        await storageFile.delete().catch(() => {});
+        await fileDocRef.delete();
+        throw new Error(
+            `File size mismatch. Declared: ${fileData.size}, Actual: ${actualSize}. Upload rejected.`
+        );
+    }
+
+    await fileDocRef.update({
+        status: "Uploaded" as FileStatus,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { confirmed: true, fileId, filePath: fileData.path };
+}
+
+/**
+ * Abandons a pending file upload by deleting the Firestore document
+ * and any partial Storage data.
+ * @param fileId - The ID of the file to abandon.
+ * @param userId - The UID of the user abandoning the upload.
+ */
+export async function abandonFileUpload(
+    fileId: string,
+    userId: string
+): Promise<void> {
+    const fileDocRef = dbAdmin.collection("files").doc(fileId);
+    const fileDoc = await fileDocRef.get();
+
+    if (!fileDoc.exists) {
+        return;
+    }
+
+    const fileData = fileDoc.data();
+
+    if (fileData?.creatorId !== userId) {
+        throw new Error("User does not have permission to abandon this upload.");
+    }
+
+    if (fileData?.status !== "Pending") {
+        throw new Error("File is not in Pending status. Use the delete endpoint instead.");
+    }
+
+    if (fileData.path) {
+        const bucket = getStorage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
+        await bucket.file(fileData.path).delete().catch(() => {});
+    }
+
+    await fileDocRef.delete();
 }
 
 /**
@@ -149,6 +245,7 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
     const processDoc = (doc: FirebaseFirestore.DocumentSnapshot) => {
         const data = doc.data();
         if (!data) return;
+        if (data.status === "Pending") return;
 
         filesMap.set(doc.id, {
             ...(data as Partial<FileMetadata>),
@@ -193,7 +290,13 @@ export async function deleteFileById(
 
     if (fileData.path) {
         const bucket = getStorage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
-        await bucket.file(fileData.path).delete();
+        try {
+            await bucket.file(fileData.path).delete();
+        } catch {
+            console.warn(
+                `Storage file not found during deletion (may be expected for Pending uploads): ${fileData.path}`
+            );
+        }
     }
 
     await fileDocRef.delete();
@@ -427,6 +530,7 @@ export async function updateFileVisibility(
         [userId]: "admin",
     };
     const newTeamIds: string[] = [];
+    let newTeamMemberIds: string[] = [];
 
     if (teamId) {
         // Verify the user is a member of the team they are sharing to
@@ -439,6 +543,7 @@ export async function updateFileVisibility(
             );
         }
         newTeamIds.push(teamId);
+        newTeamMemberIds = team.memberIds;
     }
 
     // Atomically update the document in Firestore
@@ -446,6 +551,7 @@ export async function updateFileVisibility(
         isPublic: isPublic,
         permissions: newPermissions,
         teamIds: newTeamIds,
+        teamMemberIds: newTeamMemberIds,
         updatedAt: FieldValue.serverTimestamp(),
     });
 }

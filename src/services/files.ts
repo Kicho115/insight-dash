@@ -28,8 +28,10 @@ export const uploadFile = async ({
         return { success: false, error: new Error("User not authenticated.") };
     }
 
+    let fileId: string | null = null;
+
     try {
-        // Step 1: Call our own backend API to get a signed URL
+        // Step 1: Call our backend API to get a signed URL (creates Pending doc)
         const response = await fetch("/api/files/upload", {
             method: "POST",
             body: JSON.stringify({
@@ -49,9 +51,10 @@ export const uploadFile = async ({
             throw new Error(errorData.error || "Failed to prepare upload.");
         }
 
-        const { signedUrl, filePath, fileId } = await response.json();
+        const { signedUrl, filePath, fileId: returnedFileId } = await response.json();
+        fileId = returnedFileId;
 
-        // Step 2: Use the signed URL to upload the file directly to Google Cloud Storage
+        // Step 2: PUT the file to Storage via the signed URL
         const uploadResponse = await fetch(signedUrl, {
             method: "PUT",
             body: file,
@@ -61,39 +64,49 @@ export const uploadFile = async ({
         });
 
         if (!uploadResponse.ok) {
+            // Storage PUT failed — abandon the Pending Firestore doc
+            if (fileId) {
+                await fetch(`/api/files/${fileId}/abandon-upload`, {
+                    method: "POST",
+                }).catch((e) =>
+                    console.error("Failed to abandon upload:", e)
+                );
+            }
             throw new Error("File upload to storage failed.");
         }
 
-        // Step 3: Process the file on the server (extract headers and generate summary) without awaiting
+        // Step 3: Confirm the upload (server verifies file exists + size matches)
+        const confirmResponse = await fetch(
+            `/api/files/${fileId}/confirm-upload`,
+            { method: "POST" }
+        );
+
+        if (!confirmResponse.ok) {
+            const confirmError = await confirmResponse.json();
+            throw new Error(
+                confirmError.error || "Upload confirmation failed."
+            );
+        }
+
+        const { filePath: confirmedPath } = await confirmResponse.json();
+
+        // Step 4: Trigger processing (fire-and-forget)
         fetch(`/api/files/${fileId}/process`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                filePath,
+                filePath: confirmedPath || filePath,
                 fileName: displayName || file.name,
             }),
         }).catch((err) => {
-            // Log errors for the background process, but don't fail the main upload flow
             console.error(
                 `Background processing trigger failed for ${fileId}:`,
                 err
             );
-
-            // If upload fails, try to mark the file as Error if metadata was created
-            if (fileId) {
-                fetch(`/api/files/${fileId}/process/fail`, {
-                    method: "POST",
-                }).catch((e) =>
-                    console.error("Failed to mark file as error:", e)
-                ); // Optional: create a route to quickly mark as error
-            }
-
-            return { success: false, error: err as Error };
         });
 
-        // Upload is considered successful once the file is in Storage.
         return { success: true };
     } catch (error) {
         console.error("Error during file upload process:", error);

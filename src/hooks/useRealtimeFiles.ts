@@ -77,6 +77,7 @@ export function useRealtimeFiles(
                 const categoryMap = new Map<string, FileWithDatesOrStrings>();
                 snapshot.forEach((doc) => {
                     const data = doc.data();
+                    if (data.status === "Pending") return;
                     categoryMap.set(doc.id, {
                         ...data,
                         id: doc.id,
@@ -100,6 +101,7 @@ export function useRealtimeFiles(
                 const categoryMap = new Map<string, FileWithDatesOrStrings>();
                 snapshot.forEach((doc) => {
                     const data = doc.data();
+                    if (data.status === "Pending") return;
                     categoryMap.set(doc.id, {
                         ...data,
                         id: doc.id,
@@ -112,38 +114,36 @@ export function useRealtimeFiles(
             })
         );
 
-        // 3. Team Files Queries (Chunked)
-        const userTeamIds = userTeams.map((t) => t.id);
-        if (userTeamIds.length > 0) {
-            const chunkSize = 30;
-            for (let i = 0; i < userTeamIds.length; i += chunkSize) {
-                const chunk = userTeamIds.slice(i, i + chunkSize);
-                const key = `team_${i}`;
-                
-                if (!filesMapRef.current.has(key)) filesMapRef.current.set(key, new Map());
+        // 3. Team Files Query
+        // Query by the user's UID in the denormalized teamMemberIds array.
+        // This aligns with the Firestore security rule that checks
+        // `request.auth.uid in resource.data.teamMemberIds`, which is required
+        // for Firestore to validate the query at the rule level.
+        if (userTeams.length > 0) {
+            if (!filesMapRef.current.has("team")) filesMapRef.current.set("team", new Map());
 
-                const teamQuery = query(
-                    filesCollection,
-                    where("teamIds", "array-contains-any", chunk)
-                );
+            const teamQuery = query(
+                filesCollection,
+                where("teamMemberIds", "array-contains", user.id)
+            );
 
-                unsubscribers.push(
-                    onSnapshot(teamQuery, (snapshot) => {
-                        const categoryMap = new Map<string, FileWithDatesOrStrings>();
-                        snapshot.forEach((doc) => {
-                            const data = doc.data();
-                            categoryMap.set(doc.id, {
-                                ...data,
-                                id: doc.id,
-                                createdAt: data.createdAt?.toDate() || new Date(),
-                                updatedAt: data.updatedAt?.toDate() || new Date(),
-                            } as FileWithDatesOrStrings);
-                        });
-                        filesMapRef.current.set(key, categoryMap);
-                        updateState();
-                    })
-                );
-            }
+            unsubscribers.push(
+                onSnapshot(teamQuery, (snapshot) => {
+                    const categoryMap = new Map<string, FileWithDatesOrStrings>();
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.status === "Pending") return;
+                        categoryMap.set(doc.id, {
+                            ...data,
+                            id: doc.id,
+                            createdAt: data.createdAt?.toDate() || new Date(),
+                            updatedAt: data.updatedAt?.toDate() || new Date(),
+                        } as FileWithDatesOrStrings);
+                    });
+                    filesMapRef.current.set("team", categoryMap);
+                    updateState();
+                })
+            );
         }
 
         return () => {

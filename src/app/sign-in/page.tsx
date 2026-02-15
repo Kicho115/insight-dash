@@ -192,6 +192,7 @@ export default function SignInPage() {
                             required
                             className={styles.input}
                             disabled={isLoading}
+                            maxLength={25}
                         />
                     )}
                     <input

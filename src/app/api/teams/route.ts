@@ -52,11 +52,19 @@ export async function POST(request: Request) {
         return NextResponse.json(newTeam, { status: 201 });
     } catch (error) {
         console.error("Error creating team:", error);
-        if ((error as Error).message === "Authentication required") {
+        const message = (error as Error).message;
+        if (message === "Authentication required") {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
             );
+        }
+        if (
+            message === "A team with this name already exists." ||
+            message === "Team name cannot be empty." ||
+            message === "Team name cannot exceed 25 characters."
+        ) {
+            return NextResponse.json({ error: message }, { status: 409 });
         }
         return NextResponse.json(
             { error: "Internal Server Error" },

@@ -70,6 +70,7 @@ const CreateTeamModal = ({
                         placeholder="e.g., Marketing Department"
                         disabled={isLoading}
                         autoFocus
+                        maxLength={25}
                     />
                     {error && <p className={styles.modalError}>{error}</p>}
                 </div>
