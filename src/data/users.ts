@@ -87,7 +87,7 @@ export async function updateUserName(
     uid: string,
     newName: string
 ): Promise<void> {
-    const MAX_LENGTH = 50;
+    const MAX_LENGTH = 25;
 
     if (!newName || newName.trim().length === 0) {
         throw new Error("Name cannot be empty.");

@@ -16,7 +16,7 @@ export const ProfileSettings = ({ user }: ProfileSettingsProps) => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    const MAX_LENGTH = 50;
+    const MAX_LENGTH = 25;
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -77,6 +77,7 @@ export const ProfileSettings = ({ user }: ProfileSettingsProps) => {
                         onChange={(e) => setName(e.target.value)}
                         className={styles.input}
                         disabled={isLoading}
+                        maxLength={MAX_LENGTH}
                     />
                 </div>
 

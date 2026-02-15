@@ -18,6 +18,23 @@ export async function createTeam(
         throw new Error("Team name cannot be empty.");
     }
 
+    const trimmedName = teamName.trim();
+
+    if (trimmedName.length > 25) {
+        throw new Error("Team name cannot exceed 25 characters.");
+    }
+
+    // Check for duplicate team name (case-insensitive)
+    const existing = await dbAdmin
+        .collection("teams")
+        .where("nameLower", "==", trimmedName.toLowerCase())
+        .limit(1)
+        .get();
+
+    if (!existing.empty) {
+        throw new Error("A team with this name already exists.");
+    }
+
     const newTeamRef = dbAdmin.collection("teams").doc();
     const creatorMember: TeamMember = {
         userId: creator.id,
@@ -28,7 +45,7 @@ export async function createTeam(
 
     const newTeam: Team = {
         id: newTeamRef.id,
-        name: teamName.trim(),
+        name: trimmedName,
         members: [creatorMember], // Full details array
         memberIds: [creator.id], // Denormalized simple array
         createdAt: new Date(), // Will be replaced by serverTimestamp
@@ -36,6 +53,7 @@ export async function createTeam(
 
     await newTeamRef.set({
         ...newTeam,
+        nameLower: trimmedName.toLowerCase(),
         createdAt: FieldValue.serverTimestamp(),
     });
 
@@ -100,6 +118,9 @@ export async function addMemberToTeam(
         members: FieldValue.arrayUnion(newMember),
         memberIds: FieldValue.arrayUnion(newUser.id),
     });
+
+    // Sync teamMemberIds on all files shared with this team
+    await syncTeamMemberIdsOnFiles(teamId, newUser.id, "add");
 }
 
 /**
@@ -143,6 +164,9 @@ export async function removeMemberFromTeam(
         members: FieldValue.arrayRemove(memberToRemove),
         memberIds: FieldValue.arrayRemove(memberToRemoveId),
     });
+
+    // Sync teamMemberIds on all files shared with this team
+    await syncTeamMemberIdsOnFiles(teamId, memberToRemoveId, "remove");
 }
 
 /**
@@ -226,4 +250,36 @@ export async function updateMemberRole(
     await dbAdmin.collection("teams").doc(teamId).update({
         members: updatedMembersArray,
     });
+}
+
+/**
+ * Syncs the denormalized `teamMemberIds` field on all files shared with a team
+ * when a member is added to or removed from that team.
+ * @param teamId - The ID of the team whose membership changed.
+ * @param userId - The UID of the user being added or removed.
+ * @param action - Whether to "add" or "remove" the user from file documents.
+ */
+async function syncTeamMemberIdsOnFiles(
+    teamId: string,
+    userId: string,
+    action: "add" | "remove"
+): Promise<void> {
+    const filesSnapshot = await dbAdmin
+        .collection("files")
+        .where("teamIds", "array-contains", teamId)
+        .get();
+
+    if (filesSnapshot.empty) return;
+
+    const batch = dbAdmin.batch();
+    const update =
+        action === "add"
+            ? { teamMemberIds: FieldValue.arrayUnion(userId) }
+            : { teamMemberIds: FieldValue.arrayRemove(userId) };
+
+    filesSnapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, update);
+    });
+
+    await batch.commit();
 }
