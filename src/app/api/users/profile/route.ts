@@ -34,6 +34,12 @@ export async function PATCH(request: Request) {
                 { status: 401 }
             );
         }
+        if (
+            message === "Name cannot be empty." ||
+            message.startsWith("Name cannot exceed")
+        ) {
+            return NextResponse.json({ error: message }, { status: 400 });
+        }
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }
