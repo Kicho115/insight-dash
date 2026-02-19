@@ -2,18 +2,18 @@
 
 ## Documentation
 
--   Architecture: `docs/ARCHITECTURE.md`
--   Code practices: `docs/CODE_PRACTICES.md`
+- Architecture: `docs/ARCHITECTURE.md`
+- Code practices: `docs/CODE_PRACTICES.md`
 
 ## Commands
 
--   `pnpm dev`: start the Next.js dev server.
--   `pnpm build`: build the production app.
--   `pnpm start`: run the production server.
--   `pnpm lint`: run ESLint.
--   `pnpm genkit`: start Genkit with Next dev server.
--   `pnpm test`: run Vitest in CI mode.
--   `pnpm test:watch`: run Vitest in watch mode.
+- `pnpm dev`: start the Next.js dev server.
+- `pnpm build`: build the production app.
+- `pnpm start`: run the production server.
+- `pnpm lint`: run ESLint.
+- `pnpm genkit`: start Genkit with Next dev server.
+- `pnpm test`: run Vitest in CI mode.
+- `pnpm test:watch`: run Vitest in watch mode.
 
 ## Getting Started
 
@@ -43,7 +43,6 @@ Add the following environment variables:
 ```bash
 
 # Firebase Client Config (public)
-
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
@@ -53,7 +52,6 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 # Firebase Admin Config (server-side only)
-
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_PRIVATE_KEY_ID=your_private_key_id
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----END PRIVATE KEY-----"
