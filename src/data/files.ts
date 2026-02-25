@@ -107,11 +107,6 @@ export async function prepareFileUpload({
  * @returns A list of the file metadata objects.
  */
 export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
-
-    const userTeams = await fetchUserTeams(userId);
-    const userTeamIds = userTeams.map((team) => team.id);
-
-    // Define the 3 queries
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);

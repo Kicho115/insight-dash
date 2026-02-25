@@ -80,40 +80,7 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
-// Type allowing both Date and string for compatibility
-type FileWithDates = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
-    createdAt: Date | string;
-    updatedAt: Date | string;
-};
-
-// --- Helper para Visibilidad ---
-const getVisibilityInfo = (file: SerializedFile, teams: Team[]) => {
-    if (file.isPublic) {
-        return { icon: <IoGlobeOutline />, text: "Public" };
-    }
-    if (file.teamIds && file.teamIds.length > 0) {
-        const teamId = file.teamIds[0];
-        const team = teams.find((t) => t.id === teamId);
-        return {
-            icon: <IoPeopleOutline />,
-            text: team ? team.name : "Team",
-        };
-    }
-    return { icon: <IoLockClosedOutline />, text: "Private" };
-};
-
-// Type for the serialized data coming from the server
-type SerializedFile = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
-    createdAt: string;
-    updatedAt: string;
-};
-
-interface FilesTableProps {
-    initialFiles: SerializedFile[];
-    userTeams: Team[];
-}
-
-export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
+export const FilesTable = () => {
     const router = useRouter();
     const { user } = useAuth();
 
