@@ -1,3 +1,20 @@
+## Insight Dash
+
+## Documentation
+
+-   Architecture: `docs/ARCHITECTURE.md`
+-   Code practices: `docs/CODE_PRACTICES.md`
+
+## Commands
+
+-   `pnpm dev`: start the Next.js dev server.
+-   `pnpm build`: build the production app.
+-   `pnpm start`: run the production server.
+-   `pnpm lint`: run ESLint.
+-   `pnpm genkit`: start Genkit with Next dev server.
+-   `pnpm test`: run Vitest in CI mode.
+-   `pnpm test:watch`: run Vitest in watch mode.
+
 ## Getting Started
 
 First, install the needed dependencies:

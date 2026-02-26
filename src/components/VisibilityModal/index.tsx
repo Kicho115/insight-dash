@@ -33,7 +33,6 @@ export const VisibilityModal = ({
 
     // Determine the file's current visibility setting *only when the modal opens*.
     useEffect(() => {
-        // --- THE FIX ---
         // This condition ensures this logic only runs when the modal
         // is opened, not on every background data refresh.
         if (isOpen && file) {

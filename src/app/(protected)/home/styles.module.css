@@ -1,10 +1,12 @@
 .container {
     background-color: #c7bfa7;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     padding: 2rem;
     box-sizing: border-box;
+    gap: 2rem;
 }
 
 .greetingWrapper {
@@ -47,20 +49,193 @@
     animation: expandLine 1s ease-out 0.3s both;
 }
 
-.logoutButton {
+/* Sections */
+.sectionsWrapper {
     width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.section {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    padding: 1.25rem;
+    backdrop-filter: blur(10px);
+}
+
+.sectionTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4a453b;
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Files List */
+.filesList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateX(4px);
+}
+
+.fileInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.fileName {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #2d2a24;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fileTime {
+    font-size: 0.75rem;
+    color: #6b6560;
+}
+
+.emptyState {
+    font-size: 0.875rem;
+    color: #6b6560;
+    text-align: center;
+    padding: 1rem;
+    margin: 0;
+}
+
+/* Action Items */
+.actionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.actionItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    gap: 0.75rem;
+}
+
+.actionItem:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.actionInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.actionIcon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.actionText {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.actionTitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #2d2a24;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.actionDescription {
+    font-size: 0.75rem;
+    color: #6b6560;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.acceptButton,
+.declineButton {
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
     cursor: pointer;
-    background: none;
+    transition: all 0.2s ease;
     border: none;
-    color: #495057;
-    font-family: inherit;
 }
 
-.logoutButton:hover {
-    background-color: #ffe3e3;
+.acceptButton {
+    background: #2d5a27;
+    color: white;
+}
+
+.acceptButton:hover:not(:disabled) {
+    background: #3d7a37;
+}
+
+.acceptButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.declineButton {
+    background: transparent;
+    color: #6b6560;
+    border: 1px solid #d1cdc7;
+}
+
+.declineButton:hover:not(:disabled) {
+    background: rgba(217, 4, 41, 0.1);
     color: #d90429;
+    border-color: #d90429;
 }
 
+.declineButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Animations */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -93,5 +268,20 @@
 
     .userName {
         margin-bottom: 1.5rem;
+    }
+
+    .actionItem {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .actionButtons {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .acceptButton,
+    .declineButton {
+        flex: 1;
     }
 }
