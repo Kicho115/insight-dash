@@ -84,22 +84,44 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     return <span className={style}>{text}</span>;
 };
 
-export const FilesTable = () => {
+type FileWithDates = Omit<FileMetadata, "createdAt" | "updatedAt"> & {
+    createdAt: Date | string;
+    updatedAt: Date | string;
+};
+
+const getVisibilityInfo = (file: FileWithDates, teams: Team[]) => {
+    if (file.isPublic) {
+        return { icon: <IoGlobeOutline />, text: "Public" };
+    }
+
+    if (file.teamIds && file.teamIds.length > 0) {
+        const teamName = teams.find((team) =>
+            file.teamIds?.includes(team.id)
+        )?.name;
+        return {
+            icon: <IoPeopleOutline />,
+            text: teamName ? `Team: ${teamName}` : "Team",
+        };
+    }
+
+    return { icon: <IoLockClosedOutline />, text: "Private" };
+};
+
+interface FilesTableProps {
+    initialFiles: FileWithDates[];
+    userTeams: Team[];
+}
+
+export const FilesTable = ({ initialFiles, userTeams }: FilesTableProps) => {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [teams, setTeams] = useState(userTeams);
-
     // Use realtime hook to manage files state
-    const files = useRealtimeFiles(initialFiles, user, teams);
+    const files = useRealtimeFiles(initialFiles, user, userTeams);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
-
-    useEffect(() => {
-        setTeams(userTeams);
-    }, [userTeams]);
 
     // Deletion State
     const [isDeleting, setIsDeleting] = useState(false);
@@ -328,7 +350,10 @@ export const FilesTable = () => {
                     </thead>
                     <tbody>
                         {paginatedFiles.map((file) => {
-                            const visibility = getVisibilityInfo(file, teams);
+                            const visibility = getVisibilityInfo(
+                                file,
+                                userTeams
+                            );
                             const canManage = user
                                 ? user.id === file.creatorId ||
                                   file.permissions[user.id] === "admin" ||

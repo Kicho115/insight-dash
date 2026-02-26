@@ -11,7 +11,7 @@ import {
     CsvMetadata,
 } from "@/types/file";
 import { Team } from "@/types/user";
-import { getTeamsForUser as fetchUserTeams, getTeamsForUser } from "./teams";
+import { getTeamsForUser } from "./teams";
 import { normalizePermissions } from "@/lib/helpers/permissions";
 
 interface PrepareUploadOptions {
@@ -209,6 +209,9 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
     const publicFilesQuery = dbAdmin
         .collection("files")
         .where("isPublic", "==", true);
+
+    const userTeams = await getTeamsForUser(userId);
+    const userTeamIds = userTeams.map((team) => team.id);
 
     // Handle the 30 element limit in 'array-contains-any'
     const teamFilesQueries: FirebaseFirestore.Query[] = [];
