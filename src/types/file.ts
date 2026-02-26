@@ -5,6 +5,7 @@ export type FileStatus =
     | "Error"
     | "Action Required";
 
+// Legacy permissions storage format (array entries).
 export type FilePermission = {
     type: "user" | "team";
     id: string; // userId or teamId

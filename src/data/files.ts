@@ -7,19 +7,19 @@ import { v4 as uuidv4 } from "uuid";
 import {
     File as FileMetadata,
     FileStatus,
-    FilePermission,
     ExcelMetadata,
     CsvMetadata,
 } from "@/types/file";
 import { Team } from "@/types/user";
 import { getTeamsForUser as fetchUserTeams, getTeamsForUser } from "./teams";
+import { normalizePermissions } from "@/lib/helpers/permissions";
 
 interface PrepareUploadOptions {
     fileName: string;
     fileType: string;
     fileSize: number;
     visibility: string;
-    displayName: string;
+    displayName?: string;
     user: { uid: string };
 }
 
@@ -47,7 +47,7 @@ export async function prepareFileUpload({
     const teamId = !isPublic && !isPrivate ? visibility : null;
 
     const permissions: { [key: string]: string } = {
-        [user.uid]: "admin", // El creador siempre es admin
+        [user.uid]: "admin", // The creator is always admin
     };
     const teamIds: string[] = [];
 
@@ -107,31 +107,42 @@ export async function prepareFileUpload({
  * @returns A list of the file metadata objects.
  */
 export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
-    // Obtener los equipos del usuario
     const userTeams = await fetchUserTeams(userId);
     const userTeamIds = userTeams.map((team) => team.id);
 
-    // Definir las 3 consultas
+    // Define the 3 queries
     const userFilesQuery = dbAdmin
         .collection("files")
         .where("creatorId", "==", userId);
     const publicFilesQuery = dbAdmin
         .collection("files")
         .where("isPublic", "==", true);
-    const teamFilesQuery =
-        userTeamIds.length > 0
-            ? dbAdmin
-                  .collection("files")
-                  .where("teamIds", "array-contains-any", userTeamIds)
-            : null;
 
-    // Ejecutar consultas en paralelo
-    const [userFilesSnapshot, publicFilesSnapshot, teamFilesSnapshot] =
-        await Promise.all([
-            userFilesQuery.get(),
-            publicFilesQuery.get(),
-            teamFilesQuery ? teamFilesQuery.get() : Promise.resolve(null),
-        ]);
+    // Handle the 30 element limit in 'array-contains-any'
+    const teamFilesQueries: FirebaseFirestore.Query[] = [];
+    if (userTeamIds.length > 0) {
+        const chunkSize = 30;
+        for (let i = 0; i < userTeamIds.length; i += chunkSize) {
+            const chunk = userTeamIds.slice(i, i + chunkSize);
+            teamFilesQueries.push(
+                dbAdmin
+                    .collection("files")
+                    .where("teamIds", "array-contains-any", chunk)
+            );
+        }
+    }
+
+    // Execute queries in parallel
+    const promises = [
+        userFilesQuery.get(),
+        publicFilesQuery.get(),
+        ...teamFilesQueries.map((q) => q.get()),
+    ];
+
+    const snapshots = await Promise.all(promises);
+    const userFilesSnapshot = snapshots[0];
+    const publicFilesSnapshot = snapshots[1];
+    const teamFilesSnapshots = snapshots.slice(2);
 
     const filesMap = new Map<string, FileMetadata>();
 
@@ -149,9 +160,9 @@ export async function getFilesForUser(userId: string): Promise<FileMetadata[]> {
 
     userFilesSnapshot.forEach(processDoc);
     publicFilesSnapshot.forEach(processDoc);
-    if (teamFilesSnapshot) {
-        teamFilesSnapshot.forEach(processDoc);
-    }
+    teamFilesSnapshots.forEach((snapshot) => {
+        snapshot.forEach(processDoc);
+    });
 
     const files = Array.from(filesMap.values());
     files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -205,9 +216,23 @@ export async function getFileById(
     }
 
     const fileData = fileDoc.data() as FileMetadata;
+    const permissions = normalizePermissions(fileData.permissions);
 
-    // Security check: Allow access if the file is public or the user is the creator.
-    const hasPermission = fileData.isPublic || fileData.creatorId === userId;
+    let hasPermission = false;
+
+    if (fileData.isPublic) {
+        hasPermission = true;
+    } else if (fileData.creatorId === userId) {
+        hasPermission = true;
+    } else if (permissions[userId]) {
+        hasPermission = true;
+    } else if (fileData.teamIds && fileData.teamIds.length > 0) {
+        const userTeams = await getTeamsForUser(userId);
+        const userTeamIds = userTeams.map((team) => team.id);
+        hasPermission = fileData.teamIds.some((teamId) =>
+            userTeamIds.includes(teamId)
+        );
+    }
 
     if (!hasPermission) {
         throw new Error("User does not have permission to view this file.");
@@ -276,6 +301,14 @@ export async function updateFileName(
     userId: string,
     newDisplayName: string
 ): Promise<void> {
+    const MAX_LENGTH = 50;
+    if (!newDisplayName || newDisplayName.trim().length === 0) {
+        throw new Error("Display name cannot be empty.");
+    }
+    if (newDisplayName.length > MAX_LENGTH) {
+        throw new Error(`Display name cannot exceed ${MAX_LENGTH} characters.`);
+    }
+
     const fileDocRef = dbAdmin.collection("files").doc(fileId);
     const fileDoc = await fileDocRef.get();
 
@@ -374,9 +407,10 @@ export async function updateFileVisibility(
     }
 
     const fileData = fileDoc.data() as FileMetadata;
+    const currentPermissions = normalizePermissions(fileData.permissions);
 
     // Security Check: Only allow creator/admin to change visibility
-    const userRole = fileData.permissions[userId];
+    const userRole = currentPermissions[userId];
     if (fileData.creatorId !== userId && userRole !== "admin") {
         throw new Error(
             "You do not have permission to change this file's visibility."
@@ -388,9 +422,10 @@ export async function updateFileVisibility(
     const isPrivate = newVisibility === "private";
     const teamId = !isPublic && !isPrivate ? newVisibility : null;
 
-    const newPermissions: FilePermission[] = [
-        { type: "user", id: userId, role: "admin" }, // Keep the owner as admin
-    ];
+    const newPermissions: Record<string, "admin" | "edit" | "view"> = {
+        ...currentPermissions,
+        [userId]: "admin",
+    };
     const newTeamIds: string[] = [];
 
     if (teamId) {
@@ -403,8 +438,6 @@ export async function updateFileVisibility(
                 "You cannot share a file with a team you are not a member of."
             );
         }
-        // Add the new team permission
-        newPermissions.push({ type: "team", id: teamId, role: "view" });
         newTeamIds.push(teamId);
     }
 

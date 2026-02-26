@@ -20,6 +20,7 @@ export const RenameFileModal = ({
     currentName,
     isRenaming,
 }: RenameFileModalProps) => {
+    const MAX_LENGTH = 50;
     const [newName, setNewName] = useState(currentName);
     const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +36,12 @@ export const RenameFileModal = ({
         e.preventDefault();
         if (!newName.trim() || newName.trim() === currentName) {
             setError("Please enter a different name.");
+            return;
+        }
+        if (newName.length > MAX_LENGTH) {
+            setError(
+                `Name is too long (${newName.length}/${MAX_LENGTH} chars).`
+            );
             return;
         }
         setError(null);

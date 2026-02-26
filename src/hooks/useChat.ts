@@ -36,7 +36,7 @@ export function useChat(fileId?: string) {
         const content = result.data.content ?? "No content.";
         setMessages([...next, { role: "assistant", content }]);
       } else {
-        setError(result.error || "The AI could not respond.");
+        setError("The AI could not respond.");
         setMessages([
           ...next,
           { role: "assistant", content: "Sorry, I couldn't reply right now. Please try again." },

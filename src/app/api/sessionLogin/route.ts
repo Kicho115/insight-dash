@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authAdmin } from "@/services/firebase/admin";
 import { createOrUpdateUser } from "@/data/users";
+import { parseJson } from "@/lib/api/validation";
+import { sessionLoginSchema } from "@/lib/api/schemas";
+import { handleApiError } from "@/lib/api/errorHandler";
 
 export async function POST(request: NextRequest) {
     try {
-        const { idToken } = await request.json();
-
-        if (!idToken) {
-            return NextResponse.json(
-                { error: "ID token is required" },
-                { status: 400 }
-            );
-        }
+        const { idToken } = await parseJson(request, sessionLoginSchema);
 
         // Verify the ID token to get user details
         const decodedToken = await authAdmin.verifyIdToken(idToken);
@@ -41,10 +37,7 @@ export async function POST(request: NextRequest) {
         return response;
     } catch (error) {
         console.error("Error creating session cookie:", error);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 }
-        );
+        return handleApiError(error);
     }
 }
 
