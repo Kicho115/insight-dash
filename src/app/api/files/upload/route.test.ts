@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { POST } from "@/app/api/files/upload/route";
 import { NextResponse } from "next/server";

@@ -1,6 +1,4 @@
-/// <reference types="vitest" />
 import { describe, test, expect } from "vitest";
-/// <reference types="vitest" />
 
 import { createFileUploadSchema } from "@/lib/api/schemas";
 
