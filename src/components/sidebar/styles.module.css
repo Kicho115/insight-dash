@@ -140,6 +140,13 @@
     font-weight: 600;
     margin-bottom: 1rem;
     margin-top: 2rem; /* Space for toggle button */
+    overflow: hidden;
+}
+
+.user p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .collapsed .user {

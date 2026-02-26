@@ -15,6 +15,8 @@
     border: 1px solid #e5e7eb;
     padding: 1.5rem;
     transition: all 0.2s ease-in-out;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .teamCard:hover {
@@ -34,12 +36,18 @@
     font-weight: 600;
     color: #111827;
     margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .teamMeta {
     font-size: 0.9rem;
     color: #6b7280;
     margin-top: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Create Team Card */

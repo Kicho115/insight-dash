@@ -1,4 +1,5 @@
 export type FileStatus =
+    | "Pending"
     | "Uploaded"
     | "Processing"
     | "Ready"
@@ -27,6 +28,7 @@ export type File = {
         [userId: string]: "admin" | "edit" | "view";
     };
     teamIds?: string[];
+    teamMemberIds?: string[]; // Denormalized array of team member UIDs for security rules
     isLocked: boolean; // To prevent deletion while other users are using it
     status: FileStatus;
     metadata?: ExcelMetadata | CsvMetadata; // File has metadata after processing

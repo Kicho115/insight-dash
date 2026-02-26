@@ -56,6 +56,10 @@ const StatusBadge = ({ status }: { status: FileStatus }) => {
     let text = status;
 
     switch (status) {
+        case "Pending":
+            style += ` ${styles.statusProcessing}`;
+            text = "Pending";
+            break;
         case "Uploaded":
             style += ` ${styles.statusUploaded}`;
             text = "Uploaded";

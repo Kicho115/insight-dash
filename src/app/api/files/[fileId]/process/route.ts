@@ -5,6 +5,7 @@ export const runtime = "nodejs";
  */
 
 import { NextResponse } from "next/server";
+import { dbAdmin } from "@/services/firebase/admin";
 import { updateFileMetadata } from "@/data/files";
 import { parseFile } from "@/lib/parseFile";
 import { summarizeFileFlow } from "@/services/genkit/flows/summarizeFile";
@@ -29,6 +30,24 @@ export async function POST(
             request,
             fileProcessSchema
         );
+
+        // Guard: only allow processing of confirmed ("Uploaded") files
+        const fileDoc = await dbAdmin.collection("files").doc(fileId).get();
+        if (!fileDoc.exists) {
+            return NextResponse.json(
+                { error: "File not found." },
+                { status: 404 }
+            );
+        }
+        const currentStatus = fileDoc.data()?.status;
+        if (currentStatus !== "Uploaded") {
+            return NextResponse.json(
+                {
+                    error: `Cannot process file with status "${currentStatus}". File must be in "Uploaded" status.`,
+                },
+                { status: 409 }
+            );
+        }
 
         // Set status to Processing
         await updateFileMetadata(fileId, { status: "Processing" });
