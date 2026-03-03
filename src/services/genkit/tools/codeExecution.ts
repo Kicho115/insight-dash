@@ -18,19 +18,38 @@ export const executeCodeTool = ai.defineTool(
         outputSchema: z.string().describe("The output from the executed code."),
     },
     async (input) => {
-        const sbx = await Sandbox.create();
-        const execution = await sbx.runCode(input.code, { timeoutMs: 30000 });
+        let sbx: Sandbox | undefined;
 
-        const output =
-            execution.text ||
-            (execution.logs.stdout.length > 0
-                ? execution.logs.stdout.join("\n")
-                : null) ||
-            (execution.logs.stderr.length > 0
-                ? execution.logs.stderr.join("\n")
-                : null) ||
-            "No output";
+        try {
+            sbx = await Sandbox.create();
+        } catch (err) {
+            throw new Error(
+                `Failed to create sandbox environment: ${err instanceof Error ? err.message : String(err)}`,
+            );
+        }
 
-        return `The output from the executed code is: ${output}`;
+        try {
+            const execution = await sbx.runCode(input.code, {
+                timeoutMs: 30000,
+            });
+
+            const output =
+                execution.text ||
+                (execution.logs.stdout.length > 0
+                    ? execution.logs.stdout.join("\n")
+                    : null) ||
+                (execution.logs.stderr.length > 0
+                    ? execution.logs.stderr.join("\n")
+                    : null) ||
+                "No output";
+
+            return `The output from the executed code is: ${output}`;
+        } catch (err) {
+            throw new Error(
+                `Code execution failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+        } finally {
+            await sbx.kill().catch(() => {});
+        }
     },
 );
