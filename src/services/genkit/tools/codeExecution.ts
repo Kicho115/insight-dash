@@ -19,12 +19,16 @@ export const executeCodeTool = ai.defineTool(
     },
     async (input) => {
         const sbx = await Sandbox.create();
-        const execution = await sbx.runCode(input.code);
+        const execution = await sbx.runCode(input.code, { timeoutMs: 30000 });
 
         const output =
-            execution.text ??
-            execution.logs.stdout.join("\n") ??
-            execution.logs.stderr.join("\n") ??
+            execution.text ||
+            (execution.logs.stdout.length > 0
+                ? execution.logs.stdout.join("\n")
+                : null) ||
+            (execution.logs.stderr.length > 0
+                ? execution.logs.stderr.join("\n")
+                : null) ||
             "No output";
 
         return `The output from the executed code is: ${output}`;
