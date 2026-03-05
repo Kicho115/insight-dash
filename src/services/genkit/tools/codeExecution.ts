@@ -23,9 +23,7 @@ export const executeCodeTool = ai.defineTool(
         try {
             sbx = await Sandbox.create();
         } catch (err) {
-            throw new Error(
-                `Failed to create sandbox environment: ${err instanceof Error ? err.message : String(err)}`,
-            );
+            return `Error: Failed to create sandbox environment: ${err instanceof Error ? err.message : String(err)}`;
         }
 
         try {
@@ -45,11 +43,9 @@ export const executeCodeTool = ai.defineTool(
 
             return `The output from the executed code is: ${output}`;
         } catch (err) {
-            throw new Error(
-                `Code execution failed: ${err instanceof Error ? err.message : String(err)}`,
-            );
+            return `Error: Code execution failed: ${err instanceof Error ? err.message : String(err)}`;
         } finally {
-            await sbx.kill().catch(() => {});
+            await sbx?.kill().catch(() => {});
         }
     },
 );
