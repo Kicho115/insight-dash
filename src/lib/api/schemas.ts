@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+// TODO: move this into ./schemas/
+
 export const chatMessageSchema = z.object({
     role: z.enum(["system", "user", "assistant"]),
     content: z.string().min(1),
@@ -41,3 +43,13 @@ export const sessionLoginSchema = z
         idToken: z.string().min(1),
     })
     .strict();
+
+export {
+    chartSchema,
+    chartTypeSchema,
+    chartYKeySchema,
+    createDashboardSchema,
+    dashboardSchema,
+    kpiFormatSchema,
+    kpiSchema,
+} from "./schemas/dashboard";
