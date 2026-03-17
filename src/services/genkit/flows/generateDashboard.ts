@@ -7,7 +7,34 @@
 
 import { z } from "genkit";
 import { ai } from "@/services/genkit";
-import { dashboardSchema } from "@/lib/api/schemas/dashboard";
+
+// Output schema redefined with Genkit's z to avoid Zod instance mismatch
+const kpiFormatSchema = z.enum(["number", "currency", "percentage"]);
+const chartTypeSchema = z.enum(["bar", "line", "pie", "area"]);
+const kpiSchema = z.object({
+    id: z.string(),
+    label: z.string(),
+    value: z.union([z.string(), z.number()]),
+    format: kpiFormatSchema.optional(),
+});
+const chartYKeySchema = z.object({
+    key: z.string(),
+    label: z.string(),
+    color: z.string().optional(),
+});
+const chartSchema = z.object({
+    id: z.string(),
+    type: chartTypeSchema,
+    title: z.string(),
+    data: z.array(z.record(z.string(), z.unknown())),
+    xKey: z.string(),
+    yKeys: z.array(chartYKeySchema),
+});
+const dashboardSchema = z.object({
+    title: z.string().optional(),
+    kpis: z.array(kpiSchema),
+    charts: z.array(chartSchema),
+});
 
 const inputSchema = z.object({
     fileName: z.string().min(1, "File name cannot be empty"),
