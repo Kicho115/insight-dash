@@ -13,11 +13,13 @@
     "dependencies": {
         "@e2b/code-interpreter": "^2.2.0",
         "@genkit-ai/google-genai": "^1.20.0",
+        "chart.js": "^4.5.1",
         "firebase": "^12.1.0",
         "firebase-admin": "^13.5.0",
         "genkit": "^1.21.0",
         "next": "15.5.9",
         "react": "19.1.0",
+        "react-chartjs-2": "^5.3.1",
         "react-dom": "19.1.0",
         "react-icons": "^5.5.0",
         "server-only": "^0.0.1",

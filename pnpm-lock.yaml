@@ -14,6 +14,9 @@ importers:
       '@genkit-ai/google-genai':
         specifier: ^1.20.0
         version: 1.25.0(genkit@1.25.0(@google-cloud/firestore@7.11.6)(firebase-admin@13.6.0)(firebase@12.6.0))
+      chart.js:
+        specifier: ^4.5.1
+        version: 4.5.1
       firebase:
         specifier: ^12.1.0
         version: 12.6.0
@@ -29,6 +32,9 @@ importers:
       react:
         specifier: 19.1.0
         version: 19.1.0
+      react-chartjs-2:
+        specifier: ^5.3.1
+        version: 5.3.1(chart.js@4.5.1)(react@19.1.0)
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
@@ -828,6 +834,9 @@ packages:
     engines: {node: '>= 10.16.0'}
     peerDependencies:
       jsep: ^0.4.0||^1.0.0
+
+  '@kurkle/color@0.3.4':
+    resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -2062,6 +2071,10 @@ packages:
   chalk@5.6.2:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
+  chart.js@4.5.1:
+    resolution: {integrity: sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==}
+    engines: {pnpm: '>=8'}
 
   chownr@3.0.0:
     resolution: {integrity: sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==}
@@ -3422,6 +3435,12 @@ packages:
   raw-body@2.5.3:
     resolution: {integrity: sha512-s4VSOf6yN0rvbRZGxs8Om5CWj6seneMwK3oDb4lWDH0UPhWcxwOWw5+qk24bxq87szX1ydrwylIOp2uG1ojUpA==}
     engines: {node: '>= 0.8'}
+
+  react-chartjs-2@5.3.1:
+    resolution: {integrity: sha512-h5IPXKg9EXpjoBzUfyWJvllMjG2mQ4EiuHQFhms/AjUm0XSZHhyRy2xVmLXHKrtcdrPO4mnGqRtYoD0vp95A0A==}
+    peerDependencies:
+      chart.js: ^4.1.1
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react-dom@19.1.0:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
@@ -4970,6 +4989,8 @@ snapshots:
     dependencies:
       jsep: 1.4.0
 
+  '@kurkle/color@0.3.4': {}
+
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
       '@emnapi/core': 1.6.0
@@ -6407,6 +6428,10 @@ snapshots:
       supports-color: 7.2.0
 
   chalk@5.6.2: {}
+
+  chart.js@4.5.1:
+    dependencies:
+      '@kurkle/color': 0.3.4
 
   chownr@3.0.0: {}
 
@@ -8102,6 +8127,11 @@ snapshots:
       http-errors: 2.0.1
       iconv-lite: 0.4.24
       unpipe: 1.0.0
+
+  react-chartjs-2@5.3.1(chart.js@4.5.1)(react@19.1.0):
+    dependencies:
+      chart.js: 4.5.1
+      react: 19.1.0
 
   react-dom@19.1.0(react@19.1.0):
     dependencies:
