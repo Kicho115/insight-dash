@@ -157,7 +157,7 @@ export function ChartPanel({ chart }: Props) {
 
             case "pie":
                 return (
-                    <Doughnut
+                    <Pie
                         data={{
                             labels,
                             datasets: [
