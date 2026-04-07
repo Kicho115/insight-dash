@@ -15,7 +15,7 @@ import ChatWidget from "@/components/ChatWidget";
 import { BsFiletypeXlsx, BsFiletypeCsv } from "react-icons/bs";
 import { MissingHeadersModal } from "./missingHeadersModal";
 import { DashboardGenerator } from "./DashboardGenerator";
-
+import FileKpiCards from "@/components/KpiCard/FileKpiCards";
 // CSS
 import styles from "./styles.module.css";
 
@@ -100,6 +100,8 @@ export default async function FilePage({
                     custom dashboard with charts and KPIs.
                 </p>
             </div>
+
+            <FileKpiCards file={file} />
 
             <DashboardGenerator
                 fileId={fileId}
