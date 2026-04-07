@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import ChatWidget from "@/components/ChatWidget";
 import { BsFiletypeXlsx, BsFiletypeCsv } from "react-icons/bs";
 import { MissingHeadersModal } from "./missingHeadersModal";
+import { DashboardGenerator } from "./DashboardGenerator";
 
 // CSS
 import styles from "./styles.module.css";
@@ -94,10 +95,16 @@ export default async function FilePage({
 
             <div className={styles.dashboardHint}>
                 <p>
-                    <strong>Ready to visualize?</strong> Chat with your data to explore insights,
-                    then ask the assistant to generate a custom dashboard with charts and KPIs.
+                    <strong>Ready to visualize?</strong> Chat with your data to
+                    explore insights, then ask the assistant to generate a
+                    custom dashboard with charts and KPIs.
                 </p>
             </div>
+
+            <DashboardGenerator
+                fileId={fileId}
+                canGenerate={file.status === "Ready"}
+            />
 
             {/* Floating chat only on file page; server will add metadata context */}
             <ChatWidget fileId={fileId} />

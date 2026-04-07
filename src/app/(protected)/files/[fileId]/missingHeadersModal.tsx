@@ -22,10 +22,14 @@ export const MissingHeadersModal = ({ fileId }: Props) => {
     const router = useRouter();
 
     const handleResumeFileProcessing = async () => {
-        await fetch(`/api/files/${fileId}/generate-dashboard`, {
+        const response = await fetch(`/api/files/${fileId}/resume-processing`, {
             method: "POST",
         });
-        setIsOpen(false);
+
+        if (response.ok) {
+            setIsOpen(false);
+            router.refresh();
+        }
     };
 
     return (
