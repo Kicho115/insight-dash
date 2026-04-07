@@ -14,7 +14,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import ChatWidget from "@/components/ChatWidget";
 import { BsFiletypeXlsx, BsFiletypeCsv } from "react-icons/bs";
 import { MissingHeadersModal } from "./missingHeadersModal";
-
+// borra esto
+import FileKpiCards from "@/components/KpiCard/FileKpiCards";
 // CSS
 import styles from "./styles.module.css";
 
@@ -99,7 +100,8 @@ export default async function FilePage({
                 </p>
             </div>
 
-            {/* Floating chat only on file page; server will add metadata context */}
+            <FileKpiCards file={file} />
+
             <ChatWidget fileId={fileId} />
         </div>
     );
