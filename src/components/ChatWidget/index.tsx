@@ -135,7 +135,7 @@ export default function ChatWidget({
                             onClick={onOpenDashboard}
                           >
                             <IoBarChartOutline />
-                            Ver dashboard
+                            View dashboard
                           </button>
                         )
                       )}

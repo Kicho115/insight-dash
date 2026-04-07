@@ -243,30 +243,30 @@ function buildFallbackCards(file: FileLike): KpiCardData[] {
 
     return [
         {
-            title: "Tamaño",
+            title: "Size",
             value: typeof file.size === "number" ? formatBytes(file.size) : "N/A",
-            helper: "Peso del archivo",
+            helper: "File size on disk",
             badge: <IoDocumentOutline className="h-4 w-4" />,
         },
         {
-            title: "Filas",
+            title: "Rows",
             value: rows !== null ? numberFormatter.format(rows) : "N/A",
-            helper: "Registros detectados",
+            helper: "Detected records",
             badge: <IoListOutline className="h-4 w-4" />,
         },
         {
-            title: "Columnas",
+            title: "Columns",
             value: columns !== null ? numberFormatter.format(columns) : "N/A",
-            helper: "Campos detectados",
+            helper: "Detected fields",
             badge: <IoGridOutline className="h-4 w-4" />,
         },
         {
-            title: "Hojas",
+            title: "Sheets",
             value:
                 sheetCount !== null
                     ? numberFormatter.format(sheetCount)
                     : "1",
-            helper: "Pestañas del archivo",
+            helper: "File tabs",
             badge: <IoDocumentsOutline className="h-4 w-4" />,
         },
     ];
@@ -278,31 +278,31 @@ export default function FileKpiCards({ file }: { file: FileLike }) {
     const cards: KpiCardData[] = stats
         ? [
               {
-                  title: "Promedio",
+                  title: "Average",
                   value: formatStatValue(stats.average),
                   helper: stats.columnLabel
-                      ? `Columna detectada: ${stats.columnLabel}`
-                      : "Resumen numérico del archivo",
+                      ? `Detected column: ${stats.columnLabel}`
+                      : "Numeric summary of the file",
                   badge: <IoCalculatorOutline className="h-4 w-4" />,
               },
               {
-                  title: "Mediana",
+                  title: "Median",
                   value: formatStatValue(stats.median),
                   helper: stats.columnLabel
-                      ? `Columna detectada: ${stats.columnLabel}`
-                      : "Tendencia central",
+                      ? `Detected column: ${stats.columnLabel}`
+                      : "Central tendency",
                   badge: <IoStatsChartOutline className="h-4 w-4" />,
               },
               {
-                  title: "Mayor",
+                  title: "Maximum",
                   value: formatStatValue(stats.maximum),
-                  helper: "Valor máximo detectado",
+                  helper: "Highest detected value",
                   badge: <IoArrowUpCircleOutline className="h-4 w-4" />,
               },
               {
-                  title: "Menor",
+                  title: "Minimum",
                   value: formatStatValue(stats.minimum),
-                  helper: "Valor mínimo detectado",
+                  helper: "Lowest detected value",
                   badge: <IoArrowDownCircleOutline className="h-4 w-4" />,
               },
           ]
@@ -311,11 +311,11 @@ export default function FileKpiCards({ file }: { file: FileLike }) {
     return (
         <section className={styles.section}>
             <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Indicadores del archivo</h2>
+                <h2 className={styles.sectionTitle}>File Indicators</h2>
                 <p className={styles.sectionSubtitle}>
                     {stats
-                        ? "Resumen numérico detectado automáticamente"
-                        : "Metadatos disponibles del archivo"}
+                        ? "Numeric summary detected automatically"
+                        : "Available file metadata"}
                 </p>
             </div>
 

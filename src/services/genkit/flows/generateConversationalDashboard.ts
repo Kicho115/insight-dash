@@ -67,9 +67,8 @@ export async function generateConversationalDashboardFlow(
 
         const sandboxTool = createSharedSandboxTool(sbx.sandboxId);
 
-        // Step 1: let the AI use the sandbox freely to compute the data
-        const computePrompt = `
-You are a data analyst. Your job is to compute the metrics needed for a dashboard based on a user conversation.
+        const prompt = `
+You are a data analyst generating a personalized dashboard based on a user conversation.
 
 ## File information
 - File name: ${input.fileName}
@@ -81,60 +80,37 @@ You are a data analyst. Your job is to compute the metrics needed for a dashboar
 ${conversationText}
 
 ## Your task
-Use the execute_python_code tool to:
-1. Load the file from \`${filePath}\` using pandas.
-2. Compute the exact metrics and aggregations the user requested in the conversation.
+1. Use the execute_python_code tool to load the file with pandas and compute the exact metrics the user requested.
    - For KPIs: single numeric values (totals, averages, counts, etc.)
-   - For charts: grouped/aggregated data as a list of records
-3. Print all results clearly labeled, so they can be used to build the dashboard.
+   - For charts: grouped/aggregated data as lists of records
+   - Print results clearly so you can read them back
+2. After computing, respond with ONLY a raw JSON object (no markdown, no code fences) matching this schema:
+   {
+     "title": string,
+     "kpis": [{ "id": kebab-case, "label": string, "value": number, "format": "number"|"currency"|"percentage", "helper": string (under 6 words) }],
+     "charts": [{ "id": kebab-case, "type": "bar"|"line"|"pie"|"area", "title": string, "data": [...real rows...], "xKey": string, "yKeys": [{ "key": string, "label": string }] }]
+   }
 
-Be thorough — compute everything needed for 3–5 KPIs and 2–3 charts.
+Rules:
+- 3–5 KPIs with real computed values (not 0).
+- 2–3 charts with real data rows (max 20 for bar/pie, 40 for line/area).
+- xKey and yKeys[].key must exactly match the provided column headers.
+- format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
+- Your final message must be ONLY the JSON object — nothing else.
 `;
 
-        const computeResult = await ai.generate({
-            prompt: computePrompt,
+        const result = await ai.generate({
+            prompt,
             tools: [sandboxTool],
         });
 
-        const computedData = computeResult.text ?? "";
+        const text = (result.text ?? "").trim();
 
-        // Step 2: format the computed data into a structured Dashboard JSON
-        const formatPrompt = `
-You are a data analyst. Convert the following computed data into a dashboard JSON object.
+        // Strip accidental markdown fences if the model adds them
+        const json = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
 
-## Computed data
-${computedData}
-
-## Column headers available
-${JSON.stringify(input.headers)}
-
-## Dashboard JSON rules
-- \`title\`: short human-readable name for this dashboard.
-- \`kpis\`: array of 3–5 objects with real numeric values (not 0 or null).
-  - \`id\`: kebab-case string
-  - \`label\`: human-readable label
-  - \`value\`: the actual computed number
-  - \`format\`: "currency" for price/cost/revenue/charges, "percentage" for rates, "number" for everything else
-  - \`helper\`: short phrase under 6 words describing what it measures
-- \`charts\`: array of 2–3 chart objects with real data rows.
-  - \`id\`: kebab-case string
-  - \`type\`: "bar" | "line" | "pie" | "area"
-  - \`title\`: human-readable chart title
-  - \`data\`: array of row objects with real values (max 20 rows for bar/pie, 40 for line/area)
-  - \`xKey\`: must exactly match one of the column headers
-  - \`yKeys\`: array of { key, label } where key exactly matches a column header
-
-Return ONLY the raw JSON object. No markdown, no explanation, no code fences.
-`;
-
-        const { output } = await ai.generate({
-            prompt: formatPrompt,
-            output: { schema: dashboardSchema },
-        });
-
-        if (!output) throw new Error("AI did not return a dashboard structure.");
-
-        return output;
+        const parsed = JSON.parse(json);
+        return dashboardSchema.parse(parsed);
     } finally {
         await sbx?.kill().catch(() => {});
     }
