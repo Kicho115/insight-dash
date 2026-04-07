@@ -2,9 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { ChartPanel } from "@/components/ChartPanel";
+import KpiCard from "@/components/KpiCard/KpiCard";
 import { generateDashboardForFile } from "@/services/files";
-import type { Dashboard, KPI } from "@/types/dashboard";
+import type { Dashboard, KPI, KPIFormat } from "@/types/dashboard";
+import {
+    IoCalculatorOutline,
+    IoCashOutline,
+    IoStatsChartOutline,
+} from "react-icons/io5";
 import styles from "./styles.module.css";
+
+function kpiBadge(format: KPIFormat | undefined): React.ReactNode {
+    if (format === "currency") return <IoCashOutline className="h-4 w-4" />;
+    if (format === "percentage") return <IoStatsChartOutline className="h-4 w-4" />;
+    return <IoCalculatorOutline className="h-4 w-4" />;
+}
 
 type Props = {
     fileId: string;
@@ -95,17 +107,13 @@ export function DashboardGenerator({ fileId, canGenerate }: Props) {
                     {dashboard.kpis.length > 0 && (
                         <div className={styles.kpiGrid}>
                             {dashboard.kpis.map((kpi) => (
-                                <article
-                                    className={styles.kpiCard}
+                                <KpiCard
                                     key={kpi.id}
-                                >
-                                    <p className={styles.kpiLabel}>
-                                        {kpi.label}
-                                    </p>
-                                    <p className={styles.kpiValue}>
-                                        {formatKpiValue(kpi)}
-                                    </p>
-                                </article>
+                                    title={kpi.label}
+                                    value={formatKpiValue(kpi)}
+                                    helper={kpi.helper}
+                                    badge={kpiBadge(kpi.format)}
+                                />
                             ))}
                         </div>
                     )}

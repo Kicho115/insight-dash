@@ -16,6 +16,7 @@ const kpiSchema = z.object({
     label: z.string(),
     value: z.union([z.string(), z.number()]),
     format: kpiFormatSchema.optional(),
+    helper: z.string().optional(),
 });
 const chartYKeySchema = z.object({
     key: z.string(),
@@ -67,6 +68,7 @@ You do NOT have access to the actual data rows — only the metadata. Follow the
 - Select 3 to 5 columns that likely contain numeric or aggregatable values (e.g. revenue, count, total, rate, score).
 - Set \`value\` to \`0\` as a placeholder — real values will be computed later.
 - Set \`format\` based on the column name: use "currency" for price/revenue/cost/sales/amount, "percentage" for rate/ratio/pct/percent, "number" for everything else.
+- Set \`helper\` to a short phrase (under 6 words) describing what the KPI measures (e.g., "Total revenue across all sales", "Average customer satisfaction score").
 - Generate a unique \`id\` in kebab-case (e.g., "kpi-total-revenue").
 
 **Chart rules:**
@@ -100,9 +102,9 @@ You do NOT have access to the actual data rows — only the metadata. Follow the
 {
   "title": "Employee Performance FY2024",
   "kpis": [
-    { "id": "kpi-avg-rating", "label": "Avg. Overall Rating", "value": 0, "format": "number" },
-    { "id": "kpi-avg-salary", "label": "Avg. Salary", "value": 0, "format": "currency" },
-    { "id": "kpi-avg-bonus", "label": "Avg. Bonus %", "value": 0, "format": "percentage" }
+    { "id": "kpi-avg-rating", "label": "Avg. Overall Rating", "value": 0, "format": "number", "helper": "Mean rating across all employees" },
+    { "id": "kpi-avg-salary", "label": "Avg. Salary", "value": 0, "format": "currency", "helper": "Average annual compensation" },
+    { "id": "kpi-avg-bonus", "label": "Avg. Bonus %", "value": 0, "format": "percentage", "helper": "Average bonus percentage awarded" }
   ],
   "charts": [
     {

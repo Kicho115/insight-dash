@@ -10,6 +10,7 @@ export const kpiSchema = z
         label: z.string().min(1),
         value: z.union([z.string(), z.number()]),
         format: kpiFormatSchema.optional(),
+        helper: z.string().optional(),
     })
     .strict();
 
