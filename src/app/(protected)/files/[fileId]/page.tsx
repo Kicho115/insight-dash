@@ -11,7 +11,7 @@ import { formatBytes } from "@/lib/helpers/formatBytes";
 
 // Components
 import { StatusBadge } from "@/components/StatusBadge";
-import ChatWidget from "@/components/ChatWidget";
+import ChatDashboardController from "./ChatDashboardController";
 import { BsFiletypeXlsx, BsFiletypeCsv } from "react-icons/bs";
 import { MissingHeadersModal } from "./missingHeadersModal";
 import { DashboardGenerator } from "./DashboardGenerator";
@@ -108,8 +108,7 @@ export default async function FilePage({
                 canGenerate={file.status === "Ready"}
             />
 
-            {/* Floating chat only on file page; server will add metadata context */}
-            <ChatWidget fileId={fileId} />
+            <ChatDashboardController fileId={fileId} />
         </div>
     );
 }

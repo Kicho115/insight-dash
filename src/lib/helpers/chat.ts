@@ -3,6 +3,7 @@ export type ChatRole = "system" | "user" | "assistant";
 export interface ChatMessage {
   role: ChatRole;
   content: string;
+  hasDashboard?: boolean;
 }
 
 /** Turn a chat history into a single plain prompt string. */

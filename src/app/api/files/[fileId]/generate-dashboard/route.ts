@@ -372,9 +372,10 @@ export async function POST(
             );
         }
 
+        const metadata = file.metadata;
         const rowCount =
-            "numberOfRows" in (file.metadata ?? {})
-                ? file.metadata.numberOfRows
+            metadata && "numberOfRows" in metadata
+                ? (metadata as { numberOfRows: number }).numberOfRows
                 : undefined;
 
         const rows = await loadRowsFromFile(file.path, headers);
