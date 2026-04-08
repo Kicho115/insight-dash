@@ -8,6 +8,9 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:ui": "vitest --ui",
         "genkit": "genkit start -- pnpm next dev"
     },
     "dependencies": {
