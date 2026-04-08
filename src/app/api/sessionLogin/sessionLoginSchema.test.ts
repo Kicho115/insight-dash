@@ -185,17 +185,17 @@ describe("sessionLoginSchema", () => {
      * This further validates type checking.
      */
     it("should reject non-string idToken (boolean)", () => {
-    const result = sessionLoginSchema.safeParse({ idToken: true });
+        const result = sessionLoginSchema.safeParse({ idToken: true });
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-        const issue = result.error.issues[0];
-        expect(issue.code).toBe("invalid_type");
-        if (issue.code === "invalid_type") {
-            expect(issue.expected).toBe("string");
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const issue = result.error.issues[0];
+            expect(issue.code).toBe("invalid_type");
+            if (issue.code === "invalid_type") {
+                expect(issue.expected).toBe("string");
+            }
         }
-    }
-});
+    });
 
     /**
      * Test: Non-string idToken is rejected (object)
