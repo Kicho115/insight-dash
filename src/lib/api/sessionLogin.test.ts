@@ -42,8 +42,6 @@ vi.mock("@/lib/api/validation", () => ({
     parseJson: vi.fn(),
 }));
 
-import { ZodError } from "zod";
-
 import { authAdmin } from "@/services/firebase/admin";
 import { createOrUpdateUser } from "@/data/users";
 import { parseJson } from "@/lib/api/validation";
