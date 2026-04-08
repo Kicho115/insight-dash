@@ -150,35 +150,42 @@ describe("POST /api/sessionLogin", () => {
      * Test: Invalid request body format
      *
      * Scenario: Client sends a request without the required idToken field.
-     * Zod validation fails during request parsing.
+     * Request parsing fails with the same ApiError shape produced by the real
+     * parseJson helper on schema validation errors.
      *
      * Expected behavior:
      * - Response status is 400 Bad Request
      * - Response body contains error message about invalid request body
-     * - Response includes validation details from Zod schema
+     * - Response includes validation details from schema validation
      *
      * This validates that the route properly guards against malformed requests.
      */
     it("should return 400 when idToken is missing from body", async () => {
         const mockRequest = createMockRequest({});
-
-        // Simulate ZodError by throwing actual ZodError during parseJson
-        const zodError = new ZodError([
+        const validationDetails = [
             {
                 code: "invalid_type",
                 expected: "string",
-                input: "undefined",
+                input: undefined,
                 path: ["idToken"],
                 message: "Required",
             },
-        ]);
-        (parseJson as any).mockRejectedValue(zodError);
+        ];
+        const apiError = Object.assign(new Error("Invalid request body"), {
+            name: "ApiError",
+            status: 400,
+            statusCode: 400,
+            details: validationDetails,
+        });
+
+        (parseJson as any).mockRejectedValue(apiError);
 
         const response = await POST(mockRequest);
         const json = await response.json();
 
         expect(response.status).toBe(400);
         expect(json.error).toContain("Invalid request body");
+        expect(json.details).toEqual(validationDetails);
     });
 
     /**
