@@ -150,26 +150,26 @@ describe("sessionLoginSchema", () => {
      * This enforces type safety for the idToken field.
      */
     it("should reject non-string idToken (number)", () => {
-    const invalidData = { idToken: 12345 };
+        const invalidData = { idToken: 12345 };
 
-    try {
-        sessionLoginSchema.parse(invalidData);
-        expect.fail("Should have thrown ZodError");
-    } catch (error) {
-        expect(error).toBeInstanceOf(ZodError);
-        const zodError = error as ZodError;
+        try {
+            sessionLoginSchema.parse(invalidData);
+            expect.fail("Should have thrown ZodError");
+        } catch (error) {
+            expect(error).toBeInstanceOf(ZodError);
+            const zodError = error as ZodError;
 
-        const issue = zodError.issues[0];
-        expect(issue.path).toContain("idToken");
-        expect(issue.code).toBe("invalid_type");
+            const issue = zodError.issues[0];
+            expect(issue.path).toContain("idToken");
+            expect(issue.code).toBe("invalid_type");
 
-        if (issue.code === "invalid_type") {
-            expect(issue.expected).toBe("string");
-        } else {
-            expect.fail(`Unexpected Zod issue code: ${issue.code}`);
+            if (issue.code === "invalid_type") {
+                expect(issue.expected).toBe("string");
+            } else {
+                expect.fail(`Unexpected Zod issue code: ${issue.code}`);
+            }
         }
-    }
-});
+    });
 
     /**
      * Test: Non-string idToken is rejected (boolean)
