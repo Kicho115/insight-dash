@@ -12,7 +12,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getServerAuth, requireServerAuth, ServerAuthUser } from "@/lib/serverAuth";
+import { getServerAuth, requireServerAuth } from "@/lib/serverAuth";
+import type { ServerAuthUser } from "@/lib/serverAuth";
 
 /**
  * Mock the Next.js cookies function.
