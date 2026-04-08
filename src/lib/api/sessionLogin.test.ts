@@ -162,15 +162,14 @@ describe("POST /api/sessionLogin", () => {
      */
     it("should return 400 when idToken is missing from body", async () => {
         const mockRequest = createMockRequest({});
-        const validationDetails = [
-            {
-                code: "invalid_type",
-                expected: "string",
-                input: undefined,
-                path: ["idToken"],
-                message: "Required",
+        const validationDetails = {
+            issues: {
+                fieldErrors: {
+                    idToken: ["Required"],
+                },
+                formErrors: [],
             },
-        ];
+        };
         const apiError = Object.assign(new Error("Invalid request body"), {
             name: "ApiError",
             status: 400,
