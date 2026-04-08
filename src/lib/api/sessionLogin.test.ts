@@ -218,20 +218,20 @@ describe("POST /api/sessionLogin", () => {
     });
 
     /**
-     * Test: getUser fails for verified token
+     * Test: getUser fails for verified token because the user does not exist
      *
      * Scenario: ID token is valid and verifies successfully, but retrieving
-     * the full user record from Firebase Auth fails. This could indicate:
+     * the full user record from Firebase Auth fails because the user is not found.
+     * This could indicate:
      * - User was deleted after token generation
-     * - Firebase Auth service issues
-     * - Permissions issues
+     * - The token references a non-existent Firebase Auth user
      *
      * Expected behavior:
-     * - Response status is 500 Internal Server Error
-     * - Response contains generic error message (real error not exposed)
+     * - Response status is 404 Not Found
+     * - Response contains a not found error message
      * - No session cookie is set
      *
-     * This ensures the API gracefully handles Firebase Auth failures.
+     * This ensures the API gracefully handles missing Firebase Auth users.
      */
     it("should return 404 when getUser fails with user not found", async () => {
         const mockDecodedToken = {
