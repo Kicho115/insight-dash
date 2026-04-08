@@ -1,7 +1,6 @@
 // src/services/genkit/askAi.ts
 import { ai } from "./index";
 import type { ChatMessage } from "@/lib/helpers/chat";
-import { executeCodeTool } from "./tools/codeExecution";
 
 export interface AskAIInput {
     messages: ChatMessage[];
@@ -38,7 +37,6 @@ export async function askAI({
 
     const result = await ai.generate({
         prompt,
-        tools: [executeCodeTool],
         config: { temperature },
     });
 
