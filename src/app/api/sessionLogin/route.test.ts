@@ -45,6 +45,7 @@ vi.mock("@/lib/api/validation", () => ({
 import { authAdmin } from "@/services/firebase/admin";
 import { createOrUpdateUser } from "@/data/users";
 import { parseJson } from "@/lib/api/validation";
+import { ApiError } from "@/lib/api/errorHandler";
 
 /**
  * Helper function to create a mock NextRequest with a specific body.
@@ -168,12 +169,7 @@ describe("POST /api/sessionLogin", () => {
                 formErrors: [],
             },
         };
-        const apiError = Object.assign(new Error("Invalid request body"), {
-            name: "ApiError",
-            status: 400,
-            statusCode: 400,
-            details: validationDetails,
-        });
+        const apiError = new ApiError("Invalid request body", 400, true, validationDetails);
 
         (parseJson as any).mockRejectedValue(apiError);
 
