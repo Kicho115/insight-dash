@@ -3,7 +3,6 @@
 import { z } from "genkit";
 import { ai } from "@/services/genkit";
 import { Sandbox } from "@e2b/code-interpreter";
-import { createSharedSandboxTool } from "@/services/genkit/tools/sharedSandboxExecution";
 import type { ChatMessage } from "@/lib/helpers/chat";
 import { serializeMessages } from "@/lib/helpers/chat";
 
@@ -49,6 +48,12 @@ export interface ConversationalDashboardInput {
     conversationHistory: ChatMessage[];
 }
 
+function extractPythonCode(text: string): string {
+    const fenced = text.match(/```(?:python)?\s*([\s\S]*?)```/i);
+    if (fenced) return fenced[1].trim();
+    return text.trim();
+}
+
 export async function generateConversationalDashboardFlow(
     input: ConversationalDashboardInput,
 ) {
@@ -61,56 +66,79 @@ export async function generateConversationalDashboardFlow(
 
     try {
         sbx = await Sandbox.create({ timeoutMs: 120_000 });
-
-        // Upload the file to the sandbox
         await sbx.files.write(filePath, input.fileBuffer);
 
-        const sandboxTool = createSharedSandboxTool(sbx.sandboxId);
-
-        const prompt = `
-You are a data analyst generating a personalized dashboard based on a user conversation.
+        // Step 1: AI writes Python code based on the conversation (plain text — no tools)
+        const codeResult = await ai.generate({
+            prompt: `
+You are a data analyst. Write Python code using pandas to compute the exact metrics requested in this conversation.
 
 ## File information
-- File name: ${input.fileName}
-- File path in sandbox: ${filePath}
+- File path: ${filePath}
 - Column headers: ${JSON.stringify(input.headers)}
 - Summary: ${input.summary}
 
 ## Conversation history
 ${conversationText}
 
-## Your task
-1. Use the execute_python_code tool to load the file with pandas and compute the exact metrics the user requested.
-   - For KPIs: single numeric values (totals, averages, counts, etc.)
-   - For charts: grouped/aggregated data as lists of records
-   - Print results clearly so you can read them back
-2. After computing, respond with ONLY a raw JSON object (no markdown, no code fences) matching this schema:
-   {
-     "title": string,
-     "kpis": [{ "id": kebab-case, "label": string, "value": number, "format": "number"|"currency"|"percentage", "helper": string (under 6 words) }],
-     "charts": [{ "id": kebab-case, "type": "bar"|"line"|"pie"|"area", "title": string, "data": [...real rows...], "xKey": string, "yKeys": [{ "key": string, "label": string }] }]
-   }
+## Instructions
+Write a single self-contained Python script that:
+1. Loads the file from \`${filePath}\` using pandas (use pd.read_csv or pd.read_excel based on the extension).
+2. Computes the exact KPIs and chart data the user requested:
+   - KPIs: print a labeled line per value, e.g. "avg_charges_smokers: 32050.23"
+   - Charts: print each dataset as a labeled JSON array, e.g. "chart_region_charges: [{'region': 'NE', 'charges': 12000}, ...]"
+3. Prints all results clearly so they can be parsed.
 
-Rules:
-- 3–5 KPIs with real computed values (not 0).
-- 2–3 charts with real data rows (max 20 for bar/pie, 40 for line/area).
-- xKey and yKeys[].key must exactly match the provided column headers.
-- format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
-- Your final message must be ONLY the JSON object — nothing else.
-`;
-
-        const result = await ai.generate({
-            prompt,
-            tools: [sandboxTool],
+Return ONLY the Python code, no explanation.
+`,
         });
 
-        const text = (result.text ?? "").trim();
+        const pythonCode = extractPythonCode(codeResult.text ?? "");
 
-        // Strip accidental markdown fences if the model adds them
-        const json = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+        if (!pythonCode) {
+            throw new Error("AI did not generate Python code.");
+        }
 
-        const parsed = JSON.parse(json);
-        return dashboardSchema.parse(parsed);
+        // Step 2: Execute the code directly in E2B (no Genkit tools)
+        const execution = await sbx.runCode(pythonCode, { timeoutMs: 30_000 });
+
+        const computedData = (
+            execution.text ||
+            execution.logs.stdout.join("\n") ||
+            execution.logs.stderr.join("\n")
+        ).trim();
+
+        if (!computedData) {
+            throw new Error("Python script produced no output. Check the generated code.");
+        }
+
+        // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
+        const { output } = await ai.generate({
+            prompt: `
+Convert the following computed data into a dashboard JSON object.
+Use ONLY the values present in the computed data — do not invent or substitute metrics.
+
+## Computed data
+${computedData}
+
+## Column headers available
+${JSON.stringify(input.headers)}
+
+## Rules
+- title: short human-readable dashboard name derived from the data topic.
+- kpis: one item per computed KPI value. Do not add KPIs not present in the data.
+  Fields: id (kebab-case), label, value (exact computed number), format ("currency"|"percentage"|"number"), helper (under 6 words).
+- charts: one item per computed chart dataset. Do not add charts not present in the data.
+  Fields: id (kebab-case), type ("bar"|"line"|"pie"|"area"), title, data (exact rows, max 20 for bar/pie, 40 for line/area), xKey, yKeys ([{ key, label }]).
+- xKey and yKeys[].key must exactly match the provided column headers.
+- format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
+`,
+            output: { schema: dashboardSchema },
+        });
+
+        if (!output) throw new Error("AI did not return a dashboard structure.");
+        return output;
+
     } finally {
         await sbx?.kill().catch(() => {});
     }

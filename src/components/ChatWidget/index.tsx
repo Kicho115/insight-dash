@@ -15,6 +15,7 @@ interface ChatState {
   canSend: boolean;
   setInput: (v: string) => void;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  retryChat?: () => void;
 }
 
 type Props = {
@@ -22,16 +23,20 @@ type Props = {
   /** When provided, the widget uses this external state instead of its own useChat */
   chatState?: ChatState;
   dashboardLoading?: boolean;
+  dashboardError?: string | null;
   hasDashboard?: boolean;
   onOpenDashboard?: () => void;
+  onRetryDashboard?: () => void;
 };
 
 export default function ChatWidget({
   fileId,
   chatState,
   dashboardLoading = false,
+  dashboardError = null,
   hasDashboard = false,
   onOpenDashboard,
+  onRetryDashboard,
 }: Props) {
   const [open, setOpen] = useState<boolean>(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -75,6 +80,7 @@ export default function ChatWidget({
     canSend,
     setInput,
     handleSubmit,
+    retryChat,
   } = chatState ?? ownChat;
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -120,15 +126,30 @@ export default function ChatWidget({
               <div key={idx} className={m.role === "user" ? styles.rowUser : styles.rowAssistant}>
                 <div className={styles.bubble}>
                   {m.content}
-                  {m.hasDashboard && onOpenDashboard && (
+                  {m.hasDashboard && (
                     <div>
                       {dashboardLoading && idx === messages.length - 1 ? (
                         <span className={styles.dashboardButtonLoading}>
                           <span className={styles.miniSpinner} />
                           Generating dashboard…
                         </span>
+                      ) : dashboardError && idx === messages.length - 1 ? (
+                        <>
+                          <p className={styles.dashboardErrorText}>
+                            Service temporarily unavailable.
+                          </p>
+                          {onRetryDashboard && (
+                            <button
+                              type="button"
+                              className={styles.retryButton}
+                              onClick={onRetryDashboard}
+                            >
+                              Retry
+                            </button>
+                          )}
+                        </>
                       ) : (
-                        hasDashboard && (
+                        hasDashboard && onOpenDashboard && (
                           <button
                             type="button"
                             className={styles.dashboardButton}
@@ -149,7 +170,21 @@ export default function ChatWidget({
                 <div className={styles.bubble}>Typing…</div>
               </div>
             )}
-            {error && <div className={styles.error}>{error}</div>}
+            {error && (
+              <div className={styles.error}>
+                {error}
+                {retryChat && (
+                  <button
+                    type="button"
+                    className={styles.retryButton}
+                    style={{ marginTop: "6px", display: "flex" }}
+                    onClick={() => void retryChat()}
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <form className={styles.composer} onSubmit={handleSubmit}>

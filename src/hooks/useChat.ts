@@ -1,7 +1,7 @@
 // src/hooks/useChat.ts
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { askAi } from "@/services/ai";
 import type { ChatMessage } from "@/lib/helpers/chat";
 import type { Dashboard } from "@/types/dashboard";
@@ -18,14 +18,19 @@ export function useChat(fileId?: string) {
   const [input, setInput] = useState<string>("");
   const [sending, setSending] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const lastUserMessage = useRef<string>("");
   const [pendingDashboard, setPendingDashboard] = useState<Dashboard | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const lastDashboardHistory = useRef<ChatMessage[]>([]);
 
   const canSend = input.trim().length > 0 && !sending;
 
   async function fetchDashboard(history: ChatMessage[]): Promise<void> {
     if (!fileId) return;
+    lastDashboardHistory.current = history;
     setDashboardLoading(true);
+    setDashboardError(null);
     try {
       const res = await fetch(`/api/files/${fileId}/chat-dashboard`, {
         method: "POST",
@@ -36,22 +41,28 @@ export function useChat(fileId?: string) {
       if (res.ok && data.dashboard) {
         setPendingDashboard(data.dashboard);
       } else {
-        const message = data?.error ?? "Failed to generate dashboard.";
-        setError(`Dashboard: ${message}`);
+        setDashboardError(data?.error ?? "Failed to generate dashboard.");
       }
     } catch {
-      setError("Dashboard: unexpected error, check the server logs.");
+      setDashboardError("Unexpected error generating dashboard.");
     } finally {
       setDashboardLoading(false);
     }
   }
 
-  async function send(): Promise<void> {
-    const text = input.trim();
+  async function retryDashboard(): Promise<void> {
+    if (lastDashboardHistory.current.length > 0) {
+      await fetchDashboard(lastDashboardHistory.current);
+    }
+  }
+
+  async function send(overrideText?: string): Promise<void> {
+    const text = (overrideText ?? input).trim();
     if (!text || sending) return;
 
     setError(null);
-    setInput("");
+    if (!overrideText) setInput("");
+    lastUserMessage.current = text;
 
     const next: ChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages(next);
@@ -63,7 +74,6 @@ export function useChat(fileId?: string) {
       if (result.success) {
         const raw = result.data.content ?? "No content.";
         const hasDashboard = DASHBOARD_SIGNAL_RE.test(raw);
-        console.log("[useChat] hasDashboard:", hasDashboard, "| raw tail:", raw.slice(-60));
         const content = raw.replace(DASHBOARD_SIGNAL_RE, "").trim();
 
         const assistantMessage: ChatMessage = { role: "assistant", content, hasDashboard };
@@ -100,6 +110,14 @@ export function useChat(fileId?: string) {
     setPendingDashboard(null);
   }
 
+  async function retryChat(): Promise<void> {
+    if (!lastUserMessage.current || sending) return;
+    const text = lastUserMessage.current;
+    // Remove last two messages (failed assistant reply + original user message)
+    setMessages((prev) => prev.slice(0, -2));
+    await send(text);
+  }
+
   return {
     messages,
     input,
@@ -108,8 +126,11 @@ export function useChat(fileId?: string) {
     canSend,
     setInput,
     handleSubmit,
+    retryChat,
     pendingDashboard,
     dashboardLoading,
+    dashboardError,
     clearDashboard,
+    retryDashboard,
   };
 }

@@ -18,9 +18,12 @@ export default function ChatDashboardController({ fileId }: Props) {
         canSend,
         setInput,
         handleSubmit,
+        retryChat,
         pendingDashboard,
         dashboardLoading,
+        dashboardError,
         clearDashboard,
+        retryDashboard,
     } = useChat(fileId);
 
     const [sheetOpen, setSheetOpen] = useState(false);
@@ -54,10 +57,13 @@ export default function ChatDashboardController({ fileId }: Props) {
                     canSend,
                     setInput,
                     handleSubmit,
+                    retryChat,
                 }}
                 dashboardLoading={dashboardLoading}
+                dashboardError={dashboardError}
                 hasDashboard={!!pendingDashboard}
                 onOpenDashboard={handleOpenDashboard}
+                onRetryDashboard={() => void retryDashboard()}
             />
 
             {(sheetOpen || dashboardLoading) && (
