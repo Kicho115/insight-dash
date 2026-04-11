@@ -59,7 +59,9 @@ export async function generateConversationalDashboardFlow(
 ) {
     const filePath = `/home/user/data.${input.fileExtension}`;
     const conversationText = serializeMessages(
-        input.conversationHistory.filter((m) => m.role !== "system"),
+        input.conversationHistory
+            .filter((m) => m.role !== "system")
+            .slice(-10),
     );
 
     let sbx: Sandbox | undefined;

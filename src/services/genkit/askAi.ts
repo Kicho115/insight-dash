@@ -27,7 +27,9 @@ export async function askAI({
         parts.push(preamble.trim());
     }
 
-    for (const m of messages) {
+    // Keep only the last 10 messages to avoid large payloads
+    const recentMessages = messages.slice(-10);
+    for (const m of recentMessages) {
         const tag = m.role === "assistant" ? "ASSISTANT" : m.role.toUpperCase();
         parts.push(`${tag}: ${m.content}`);
     }
