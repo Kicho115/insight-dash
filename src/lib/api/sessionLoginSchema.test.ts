@@ -100,10 +100,12 @@ describe("sessionLoginSchema", () => {
         } catch (error) {
             expect(error).toBeInstanceOf(ZodError);
             const zodError = error as ZodError;
-            expect(zodError.issues[0].path).toContain("idToken");
-            expect(zodError.issues[0].message).toContain(
-                "expected string to have"
-            );
+            const issue = zodError.issues[0];
+
+            expect(issue.path).toEqual(["idToken"]);
+            expect(issue.code).toBe("too_small");
+            expect(issue.minimum).toBe(1);
+            expect(issue.type).toBe("string");
         }
     });
 
