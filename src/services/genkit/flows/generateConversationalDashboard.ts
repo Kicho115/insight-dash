@@ -54,6 +54,27 @@ function extractPythonCode(text: string): string {
     return text.trim();
 }
 
+function isTransientError(err: unknown): boolean {
+    if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+        return msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("429") || msg.includes("rate limit");
+    }
+    return false;
+}
+
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            if (attempt === maxAttempts || !isTransientError(err)) throw err;
+            const delay = 2000 * attempt;
+            await new Promise((res) => setTimeout(res, delay));
+        }
+    }
+    throw new Error("Unreachable");
+}
+
 export async function generateConversationalDashboardFlow(
     input: ConversationalDashboardInput,
 ) {
@@ -71,7 +92,7 @@ export async function generateConversationalDashboardFlow(
         await sbx.files.write(filePath, input.fileBuffer);
 
         // Step 1: AI writes Python code based on the conversation (plain text — no tools)
-        const codeResult = await ai.generate({
+        const codeResult = await withRetry(() => ai.generate({
             prompt: `
 You are a data analyst. Write Python code using pandas to compute the exact metrics requested in this conversation.
 
@@ -96,7 +117,7 @@ Write a single self-contained Python script that:
 
 Return ONLY the Python code, no explanation.
 `,
-        });
+        }));
 
         const pythonCode = extractPythonCode(codeResult.text ?? "");
 
@@ -125,7 +146,7 @@ Return ONLY the Python code, no explanation.
         }
 
         // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
-        const { output } = await ai.generate({
+        const { output } = await withRetry(() => ai.generate({
             prompt: `
 Convert the following computed data into a dashboard JSON object.
 Use ONLY the values present in the computed data — do not invent or substitute metrics.
@@ -147,7 +168,7 @@ ${JSON.stringify(input.headers)}
 - CRITICAL: Never invent, estimate, or substitute values. If a value is missing, marked as NO_DATA, or NaN in the computed data, omit that KPI entirely. Never use 0 as a placeholder.
 `,
             output: { schema: dashboardSchema },
-        });
+        }));
 
         if (!output) throw new Error("AI did not return a dashboard structure.");
         return output;
