@@ -86,10 +86,13 @@ ${conversationText}
 ## Instructions
 Write a single self-contained Python script that:
 1. Loads the file from \`${filePath}\` using pandas (use pd.read_csv or pd.read_excel based on the extension).
-2. Computes the exact KPIs and chart data the user requested:
-   - KPIs: print a labeled line per value, e.g. "avg_charges_smokers: 32050.23"
-   - Charts: print each dataset as a labeled JSON array, e.g. "chart_region_charges: [{'region': 'NE', 'charges': 12000}, ...]"
-3. Prints all results clearly so they can be parsed.
+2. When filtering by string column values, use case-insensitive comparison (e.g. df['col'].str.lower() == 'value').
+3. Computes a complete dashboard with BOTH KPIs and chart data based on what the user requested:
+   - Always include at least 2-4 KPI values. Print each as a labeled line, e.g. "avg_charges_smokers: 32050.23"
+   - Always include at least 1 chart dataset. Print each as a labeled JSON array, e.g. "chart_smoker_charges: [{'smoker': 'yes', 'avg_charges': 32050.23}, ...]"
+   - For groupby charts, aggregate the data (mean/sum/count) so the array has one row per group (not one row per record).
+4. If any computed value is NaN or the filtered dataset is empty, print an explicit message like "avg_charges_smokers: NO_DATA" instead of NaN.
+5. Prints all results clearly so they can be parsed.
 
 Return ONLY the Python code, no explanation.
 `,
@@ -104,11 +107,18 @@ Return ONLY the Python code, no explanation.
         // Step 2: Execute the code directly in E2B (no Genkit tools)
         const execution = await sbx.runCode(pythonCode, { timeoutMs: 30_000 });
 
-        const computedData = (
+        const stdout = (
             execution.text ||
-            execution.logs.stdout.join("\n") ||
-            execution.logs.stderr.join("\n")
+            execution.logs.stdout.join("\n")
         ).trim();
+
+        const stderr = execution.logs.stderr.join("\n").trim();
+
+        if (!stdout && stderr) {
+            throw new Error(`Python script failed:\n${stderr}`);
+        }
+
+        const computedData = stdout || stderr;
 
         if (!computedData) {
             throw new Error("Python script produced no output. Check the generated code.");
@@ -134,6 +144,7 @@ ${JSON.stringify(input.headers)}
   Fields: id (kebab-case), type ("bar"|"line"|"pie"|"area"), title, data (exact rows, max 20 for bar/pie, 40 for line/area), xKey, yKeys ([{ key, label }]).
 - xKey and yKeys[].key must exactly match the provided column headers.
 - format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
+- CRITICAL: Never invent, estimate, or substitute values. If a value is missing, marked as NO_DATA, or NaN in the computed data, omit that KPI entirely. Never use 0 as a placeholder.
 `,
             output: { schema: dashboardSchema },
         });
