@@ -329,16 +329,14 @@ function hydrateChart(chart: Chart, rows: DataRow[]): Chart {
         .map(([xValue, bucket]) => {
             const point: DataRow = { [chart.xKey]: xValue };
 
-            chart.yKeys.forEach((yKey) => {
+            for (const yKey of chart.yKeys) {
                 const values = bucket[yKey.key] ?? [];
-                if (!values.length) {
-                    return;
-                }
+                if (!values.length) continue;
 
                 const mode =
                     chart.type === "line" || chart.type === "area" ? "avg" : "sum";
                 point[yKey.key] = roundNumber(aggregate(values, mode));
-            });
+            }
 
             return Object.keys(point).length > 1 ? point : null;
         })
