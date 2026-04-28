@@ -230,15 +230,27 @@ function hydrateKpis(kpis: KPI[], rows: DataRow[], headers: string[]): KPI[] {
     const numericColumns = getNumericColumns(rows, headers);
 
     return kpis.map((kpi) => {
+        const mode = inferAgg(`${kpi.label} ${kpi.id}`);
         const column = chooseKpiColumn(kpi, headers, numericColumns);
+
         if (!column) {
-            return { ...kpi, value: rows.length };
+            // Only fall back to row count for count-type KPIs; otherwise keep
+            // the AI-generated placeholder value unchanged.
+            if (mode === "count") {
+                return { ...kpi, value: rows.length };
+            }
+            return kpi;
         }
 
-        const mode = inferAgg(`${kpi.label} ${kpi.id}`);
         const values = rows
             .map((row) => toNumber(row[column]))
             .filter((value): value is number => value !== undefined);
+
+        // No numeric values were parsed — treat as no-data and leave the
+        // placeholder rather than silently returning 0.
+        if (values.length === 0) {
+            return kpi;
+        }
 
         const computed = aggregate(values, mode);
         return { ...kpi, value: roundNumber(computed) };
@@ -313,18 +325,24 @@ function hydrateChart(chart: Chart, rows: DataRow[]): Chart {
         });
     }
 
-    const points = Array.from(grouped.entries()).map(([xValue, bucket]) => {
-        const point: DataRow = { [chart.xKey]: xValue };
+    const points = Array.from(grouped.entries())
+        .map(([xValue, bucket]) => {
+            const point: DataRow = { [chart.xKey]: xValue };
 
-        chart.yKeys.forEach((yKey) => {
-            const values = bucket[yKey.key] ?? [];
-            const mode =
-                chart.type === "line" || chart.type === "area" ? "avg" : "sum";
-            point[yKey.key] = roundNumber(aggregate(values, mode));
-        });
+            chart.yKeys.forEach((yKey) => {
+                const values = bucket[yKey.key] ?? [];
+                if (!values.length) {
+                    return;
+                }
 
-        return point;
-    });
+                const mode =
+                    chart.type === "line" || chart.type === "area" ? "avg" : "sum";
+                point[yKey.key] = roundNumber(aggregate(values, mode));
+            });
+
+            return Object.keys(point).length > 1 ? point : null;
+        })
+        .filter((point): point is DataRow => point !== null);
 
     const sorted = sortChartData(points, chart);
     const limited = sorted.slice(0, maxPointsForChart(chart.type));
