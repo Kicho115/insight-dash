@@ -75,10 +75,15 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
     throw new Error("Unreachable");
 }
 
+const ALLOWED_EXTENSIONS = new Set(["csv", "xls", "xlsx"]);
+
 export async function generateConversationalDashboardFlow(
     input: ConversationalDashboardInput,
 ) {
-    const filePath = `/home/user/data.${input.fileExtension}`;
+    const safeExtension = ALLOWED_EXTENSIONS.has(input.fileExtension)
+        ? input.fileExtension
+        : "csv";
+    const filePath = `/home/user/data.${safeExtension}`;
     const conversationText = serializeMessages(
         input.conversationHistory
             .filter((m) => m.role !== "system")
