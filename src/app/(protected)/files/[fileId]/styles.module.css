@@ -81,6 +81,88 @@
     }
 }
 
+.dashboardSection {
+    padding: 1rem 1.5rem;
+    background-color: #f9f9f9;
+    border-radius: 16px;
+    margin-top: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.generateButton {
+    border: none;
+    border-radius: 10px;
+    background-color: #0f766e;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.generateButton:hover:not(:disabled) {
+    background-color: #115e59;
+}
+
+.generateButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.dashboardError {
+    margin: 0;
+    color: #b91c1c;
+    font-size: 0.9rem;
+}
+
+.dashboardInfo {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.92rem;
+}
+
+.kpiGrid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+}
+
+.kpiCard {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0.85rem;
+}
+
+.kpiLabel {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.kpiValue {
+    margin: 0.35rem 0 0;
+    color: #111827;
+    font-weight: 700;
+    font-size: 1.15rem;
+}
+
+.chartsGrid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0.9rem;
+}
+
 @media screen and (max-width: 600px) {
     .header {
         overflow: hidden;
@@ -109,5 +191,14 @@
         & p {
             font-size: 0.75rem;
         }
+    }
+
+    .dashboardHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .generateButton {
+        width: 100%;
     }
 }

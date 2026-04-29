@@ -8,6 +8,7 @@ import { askAi } from "@/services/ai";
 import type { ChatMessage } from "@/lib/helpers/chat";
 import { IoSend, IoChatbubblesOutline, IoClose } from "react-icons/io5";
 
+
 export default function FileChat() {
   // UI state
   const [open, setOpen] = useState<boolean>(false);
@@ -87,6 +88,7 @@ export default function FileChat() {
         title="Open chat"
       >
         <IoChatbubblesOutline />
+        
       </button>
 
       {/* Overlay panel (out-of-flow) */}
@@ -104,7 +106,7 @@ export default function FileChat() {
               <IoClose />
             </button>
           </header>
-
+           
           <div className={styles.body} ref={viewportRef}>
             {messages.map((m: ChatMessage, idx: number) => (
               <div key={idx} className={m.role === "user" ? styles.rowUser : styles.rowAssistant}>

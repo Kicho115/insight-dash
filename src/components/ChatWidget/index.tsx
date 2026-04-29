@@ -3,13 +3,41 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./styles.module.css";
-import { IoChatbubblesOutline, IoClose, IoSend } from "react-icons/io5";
+import { IoChatbubblesOutline, IoClose, IoSend, IoBarChartOutline } from "react-icons/io5";
 import { useChat } from "@/hooks/useChat";
 import type { ChatMessage } from "@/lib/helpers/chat";
 
-type Props = { fileId?: string };
+interface ChatState {
+  messages: ChatMessage[];
+  input: string;
+  sending: boolean;
+  error: string | null;
+  canSend: boolean;
+  setInput: (v: string) => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  retryChat?: () => void;
+}
 
-export default function ChatWidget({ fileId }: Props) {
+type Props = {
+  fileId?: string;
+  /** When provided, the widget uses this external state instead of its own useChat */
+  chatState?: ChatState;
+  dashboardLoading?: boolean;
+  dashboardError?: string | null;
+  hasDashboard?: boolean;
+  onOpenDashboard?: () => void;
+  onRetryDashboard?: () => void;
+};
+
+export default function ChatWidget({
+  fileId,
+  chatState,
+  dashboardLoading = false,
+  dashboardError = null,
+  hasDashboard = false,
+  onOpenDashboard,
+  onRetryDashboard,
+}: Props) {
   const [open, setOpen] = useState<boolean>(false);
   const [status, setStatus] = useState<string | null>(null);
   const [statusChecked, setStatusChecked] = useState(false);
@@ -27,35 +55,33 @@ export default function ChatWidget({ fileId }: Props) {
       try {
         const res = await fetch(`/api/files/${fileId}`, { cache: "no-store" });
         if (!res.ok) {
-          if (!cancelled) {
-            setStatus(null);
-            setStatusChecked(true);
-          }
+          if (!cancelled) { setStatus(null); setStatusChecked(true); }
           return;
         }
         const data = await res.json();
-        if (!cancelled) {
-          setStatus(data?.status ?? null);
-          setStatusChecked(true);
-        }
+        if (!cancelled) { setStatus(data?.status ?? null); setStatusChecked(true); }
       } catch {
-        if (!cancelled) {
-          setStatus(null);
-          setStatusChecked(true);
-        }
+        if (!cancelled) { setStatus(null); setStatusChecked(true); }
       }
     };
 
     fetchStatus();
     const intervalId = window.setInterval(fetchStatus, 3000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
+    return () => { cancelled = true; clearInterval(intervalId); };
   }, [fileId]);
 
-  const { messages, input, sending, error, canSend, setInput, handleSubmit } = useChat(fileId);
+  // Use external chatState if provided, otherwise fall back to own useChat
+  const ownChat = useChat(chatState ? undefined : fileId);
+  const {
+    messages,
+    input,
+    sending,
+    error,
+    canSend,
+    setInput,
+    handleSubmit,
+    retryChat,
+  } = chatState ?? ownChat;
 
   const viewportRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -65,9 +91,7 @@ export default function ChatWidget({ fileId }: Props) {
   }, [open, messages]);
 
   const isVisible = !fileId || (statusChecked && status === "Ready");
-  if (!isVisible) {
-    return null;
-  }
+  if (!isVisible) return null;
 
   return (
     <>
@@ -100,7 +124,45 @@ export default function ChatWidget({ fileId }: Props) {
           <div className={styles.body} ref={viewportRef}>
             {messages.map((m: ChatMessage, idx: number) => (
               <div key={idx} className={m.role === "user" ? styles.rowUser : styles.rowAssistant}>
-                <div className={styles.bubble}>{m.content}</div>
+                <div className={styles.bubble}>
+                  {m.content}
+                  {m.hasDashboard && (
+                    <div>
+                      {dashboardLoading && idx === messages.length - 1 ? (
+                        <span className={styles.dashboardButtonLoading}>
+                          <span className={styles.miniSpinner} />
+                          Generating dashboard…
+                        </span>
+                      ) : dashboardError && idx === messages.length - 1 ? (
+                        <>
+                          <p className={styles.dashboardErrorText}>
+                            Service temporarily unavailable.
+                          </p>
+                          {onRetryDashboard && (
+                            <button
+                              type="button"
+                              className={styles.retryButton}
+                              onClick={onRetryDashboard}
+                            >
+                              Retry
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        hasDashboard && onOpenDashboard && (
+                          <button
+                            type="button"
+                            className={styles.dashboardButton}
+                            onClick={onOpenDashboard}
+                          >
+                            <IoBarChartOutline />
+                            View dashboard
+                          </button>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             {sending && (
@@ -108,7 +170,21 @@ export default function ChatWidget({ fileId }: Props) {
                 <div className={styles.bubble}>Typing…</div>
               </div>
             )}
-            {error && <div className={styles.error}>{error}</div>}
+            {error && (
+              <div className={styles.error}>
+                {error}
+                {retryChat && (
+                  <button
+                    type="button"
+                    className={styles.retryButton}
+                    style={{ marginTop: "6px", display: "flex" }}
+                    onClick={() => void retryChat()}
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <form className={styles.composer} onSubmit={handleSubmit}>

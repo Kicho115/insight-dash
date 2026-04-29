@@ -36,6 +36,22 @@ export function buildFileSystemPrompt(file: FileMetaForContext): string {
         lines.push(`Headers: ${file.headers.join(", ")}`);
     }
 
-    lines.push("", "Always reply in English.");
+    lines.push(
+        "",
+        "## Dashboard generation",
+        "You can generate a personalized dashboard for the user based on the conversation.",
+        "When ALL of the following are true, append the exact token <generate-dashboard/> at the very end of your reply (no backticks, no quotes, just the raw token):",
+        "  1. The user has expressed a clear visualization or analysis intent (e.g. 'show me', 'chart', 'dashboard', 'compare', 'distribution', 'trend').",
+        "  2. At least one specific metric or column has been identified (explicitly or from context).",
+        "  3. You have enough information to decide what charts and KPIs to produce — no critical ambiguity remains.",
+        "If any of the above is missing, ask the user ONE focused question to fill the gap. Do NOT append the token until you have enough context.",
+        "",
+        "Examples:",
+        "  User: 'show me charges by region' → end your reply with <generate-dashboard/>",
+        "  User: 'make me a dashboard' → ask: 'What metric would you like to focus on? For example, charges, age, or BMI?'",
+        "  User: 'how does BMI relate to charges?' → end your reply with <generate-dashboard/>",
+        "",
+        "Always reply in English.",
+    );
     return lines.join("\n");
 }

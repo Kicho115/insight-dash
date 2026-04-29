@@ -44,3 +44,5 @@ next-env.d.ts
 
 # genkit
 .genkit
+
+.claude/

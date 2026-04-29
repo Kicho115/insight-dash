@@ -3,6 +3,7 @@
  */
 
 import { File as FileMetadata } from "@/types/file";
+import { Dashboard } from "@/types/dashboard";
 import { AppUser } from "@/types/user";
 
 interface UploadFileOptions {
@@ -246,6 +247,35 @@ export const updateFileVisibility = async (
         return { success: true };
     } catch (error) {
         console.error("Error updating file visibility:", error);
+        return { success: false, error: error as Error };
+    }
+};
+
+/**
+ * @function generateDashboardForFile
+ * @description Calls the generate-dashboard API and returns a ChartPanel-ready dashboard payload.
+ * @param fileId The ID of the file to analyze.
+ */
+export const generateDashboardForFile = async (
+    fileId: string,
+): Promise<{ success: boolean; dashboard?: Dashboard; error?: Error }> => {
+    try {
+        const response = await fetch(`/api/files/${fileId}/generate-dashboard`, {
+            method: "POST",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data?.error || "Failed to generate dashboard.");
+        }
+
+        return {
+            success: true,
+            dashboard: data.dashboard as Dashboard,
+        };
+    } catch (error) {
+        console.error("Error generating dashboard:", error);
         return { success: false, error: error as Error };
     }
 };

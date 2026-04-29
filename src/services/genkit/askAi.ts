@@ -1,7 +1,6 @@
 // src/services/genkit/askAi.ts
 import { ai } from "./index";
 import type { ChatMessage } from "@/lib/helpers/chat";
-import { executeCodeTool } from "./tools/codeExecution";
 
 export interface AskAIInput {
     messages: ChatMessage[];
@@ -28,7 +27,9 @@ export async function askAI({
         parts.push(preamble.trim());
     }
 
-    for (const m of messages) {
+    // Keep only the last 10 messages to avoid large payloads
+    const recentMessages = messages.slice(-10);
+    for (const m of recentMessages) {
         const tag = m.role === "assistant" ? "ASSISTANT" : m.role.toUpperCase();
         parts.push(`${tag}: ${m.content}`);
     }
@@ -38,7 +39,6 @@ export async function askAI({
 
     const result = await ai.generate({
         prompt,
-        tools: [executeCodeTool],
         config: { temperature },
     });
 
