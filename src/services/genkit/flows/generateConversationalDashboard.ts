@@ -82,7 +82,12 @@ export async function generateConversationalDashboardFlow(
 ) {
     const safeExtension = ALLOWED_EXTENSIONS.has(input.fileExtension)
         ? input.fileExtension
-        : "csv";
+        : (() => {
+              console.warn(
+                  `[generateConversationalDashboard] Unrecognized fileExtension "${input.fileExtension}"; falling back to "csv".`,
+              );
+              return "csv";
+          })();
     const filePath = `/home/user/data.${safeExtension}`;
     const conversationText = serializeMessages(
         input.conversationHistory
