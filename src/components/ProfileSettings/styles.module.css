@@ -57,6 +57,13 @@
     flex-grow: 1;
 }
 
+.footerActions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .message {
     display: flex;
     align-items: center;
@@ -88,6 +95,27 @@
 }
 
 .saveButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.changePasswordButton {
+    padding: 0.6rem 1.2rem;
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.changePasswordButton:hover:not(:disabled) {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.changePasswordButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }

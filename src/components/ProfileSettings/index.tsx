@@ -4,6 +4,8 @@ import { useState, FormEvent } from "react";
 import { AppUser } from "@/types/user";
 import styles from "./styles.module.css";
 import { IoCheckmarkCircle, IoWarning } from "react-icons/io5";
+import { Modal } from "@/components/modal";
+import { PasswordResetModal } from "@/components/passwordResetModal";
 
 interface ProfileSettingsProps {
     user: AppUser;
@@ -15,6 +17,7 @@ export const ProfileSettings = ({ user }: ProfileSettingsProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     const MAX_LENGTH = 50;
 
@@ -77,6 +80,7 @@ export const ProfileSettings = ({ user }: ProfileSettingsProps) => {
                         onChange={(e) => setName(e.target.value)}
                         className={styles.input}
                         disabled={isLoading}
+                        maxLength={MAX_LENGTH}
                     />
                 </div>
 
@@ -108,15 +112,35 @@ export const ProfileSettings = ({ user }: ProfileSettingsProps) => {
                             </p>
                         )}
                     </div>
-                    <button
-                        type="submit"
-                        className={styles.saveButton}
-                        disabled={isLoading || name === user.name}
-                    >
-                        {isLoading ? "Saving..." : "Save Changes"}
-                    </button>
+                    <div className={styles.footerActions}>
+                        <button
+                            type="button"
+                            className={styles.changePasswordButton}
+                            onClick={() => setIsPasswordModalOpen(true)}
+                            disabled={isLoading}
+                        >
+                            Change Password
+                        </button>
+                        <button
+                            type="submit"
+                            className={styles.saveButton}
+                            disabled={isLoading || name === user.name}
+                        >
+                            {isLoading ? "Saving..." : "Save Changes"}
+                        </button>
+                    </div>
                 </footer>
             </form>
+
+            <Modal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+            >
+                <PasswordResetModal
+                    onClose={() => setIsPasswordModalOpen(false)}
+                    initialEmail={email}
+                />
+            </Modal>
         </div>
     );
 };
