@@ -80,6 +80,19 @@ function rowsFromWorksheet(
     }
 
     const headerRowIndex = findHeaderRowIndex(matrix, headers);
+
+    // Build a column-index map from the actual header row in the file so that
+    // data rows are matched by name rather than by position. This handles files
+    // where the stored metadata headers differ in order from the file itself.
+    const actualHeaderRow = (matrix[headerRowIndex] ?? []).map((cell) =>
+        normalizeToken(String(cell ?? "")),
+    );
+    const headerToColIndex = new Map<string, number>();
+    headers.forEach((header) => {
+        const idx = actualHeaderRow.indexOf(normalizeToken(header));
+        if (idx !== -1) headerToColIndex.set(header, idx);
+    });
+
     const dataRows = matrix.slice(
         headerRowIndex + 1,
         headerRowIndex + 1 + MAX_INPUT_ROWS,
@@ -88,8 +101,10 @@ function rowsFromWorksheet(
     return dataRows
         .map((row) => {
             const record: DataRow = {};
-            headers.forEach((header, index) => {
-                record[header] = row[index] ?? null;
+            headers.forEach((header) => {
+                const colIndex = headerToColIndex.get(header);
+                record[header] =
+                    colIndex !== undefined ? (row[colIndex] ?? null) : null;
             });
             return record;
         })
@@ -351,15 +366,53 @@ function hydrateChart(chart: Chart, rows: DataRow[]): Chart {
     };
 }
 
+function resolveColumnKey(
+    key: string,
+    headers: string[],
+): string | undefined {
+    if (headers.includes(key)) return key;
+    const normalized = normalizeToken(key);
+    return headers.find((h) => normalizeToken(h) === normalized);
+}
+
+// Sanitize AI-generated structure so that xKey/yKey references that don't
+// exactly match actual headers are corrected via case-insensitive lookup.
+// Charts or yKeys that still can't be resolved are dropped to avoid
+// grouping everything under "Unknown".
+function sanitizeDashboardStructure(
+    structure: Dashboard,
+    headers: string[],
+): Dashboard {
+    const charts = structure.charts
+        .map((chart) => {
+            const xKey = resolveColumnKey(chart.xKey, headers);
+            if (!xKey) return null;
+
+            const yKeys = chart.yKeys
+                .map((yk) => {
+                    const key = resolveColumnKey(yk.key, headers);
+                    return key ? { ...yk, key } : null;
+                })
+                .filter((yk): yk is NonNullable<typeof yk> => yk !== null);
+
+            if (yKeys.length === 0) return null;
+            return { ...chart, xKey, yKeys };
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null);
+
+    return { ...structure, charts };
+}
+
 function hydrateDashboard(
     structure: Dashboard,
     rows: DataRow[],
     headers: string[],
 ): Dashboard {
+    const sanitized = sanitizeDashboardStructure(structure, headers);
     return {
-        title: structure.title,
-        kpis: hydrateKpis(structure.kpis, rows, headers),
-        charts: structure.charts.map((chart) => hydrateChart(chart, rows)),
+        title: sanitized.title,
+        kpis: hydrateKpis(sanitized.kpis, rows, headers),
+        charts: sanitized.charts.map((chart) => hydrateChart(chart, rows)),
     };
 }
 
