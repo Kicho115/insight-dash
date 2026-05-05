@@ -62,7 +62,19 @@ export function DashboardGenerator({ fileId, canGenerate }: Props) {
                 </p>
             )}
 
-            {error && <p className={styles.dashboardError}>{error}</p>}
+            {error && (
+                <div className={styles.dashboardErrorRow}>
+                    <p className={styles.dashboardError}>{error}</p>
+                    <button
+                        type="button"
+                        className={styles.retryButton}
+                        onClick={handleGenerate}
+                        disabled={isLoading}
+                    >
+                        Try again
+                    </button>
+                </div>
+            )}
 
             {dashboard && (
                 <>

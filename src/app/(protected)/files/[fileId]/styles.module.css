@@ -117,10 +117,39 @@
     cursor: not-allowed;
 }
 
+.dashboardErrorRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 .dashboardError {
     margin: 0;
     color: #b91c1c;
     font-size: 0.9rem;
+}
+
+.retryButton {
+    border: 1px solid #b91c1c;
+    border-radius: 8px;
+    background-color: transparent;
+    color: #b91c1c;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.retryButton:hover:not(:disabled) {
+    background-color: #b91c1c;
+    color: #ffffff;
+}
+
+.retryButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .dashboardInfo {
