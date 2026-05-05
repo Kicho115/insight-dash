@@ -14,7 +14,7 @@ const chartTypeSchema = z.enum(["bar", "line", "pie", "area"]);
 const kpiSchema = z.object({
     id: z.string(),
     label: z.string(),
-    value: z.union([z.string(), z.number()]),
+    value: z.number(),
     format: kpiFormatSchema.optional(),
     helper: z.string().optional(),
 });

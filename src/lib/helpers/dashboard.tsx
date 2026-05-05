@@ -6,10 +6,10 @@ import {
 } from "react-icons/io5";
 
 export function formatKpiValue(kpi: KPI): string {
-    const value = typeof kpi.value === "number" ? kpi.value : Number(kpi.value);
+    const { value } = kpi;
 
     if (!Number.isFinite(value)) {
-        return String(kpi.value);
+        return "—";
     }
 
     if (kpi.format === "currency") {

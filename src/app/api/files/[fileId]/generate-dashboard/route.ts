@@ -282,6 +282,20 @@ function isLikelyTimeDimension(xKey: string): boolean {
 function sortChartData(data: DataRow[], chart: Chart): DataRow[] {
     if (data.length === 0) return data;
 
+    const xValues = data.map((row) => String(row[chart.xKey] ?? ""));
+
+    // If every x-axis value is numeric (e.g. age, score, year-as-number),
+    // sort ascending regardless of chart type so the axis reads naturally.
+    const allNumeric = xValues.every(
+        (v) => v !== "" && Number.isFinite(Number(v)),
+    );
+    if (allNumeric) {
+        return [...data].sort(
+            (a, b) => Number(a[chart.xKey] ?? 0) - Number(b[chart.xKey] ?? 0),
+        );
+    }
+
+    // Time-series charts and time-dimension columns: sort chronologically.
     if (
         chart.type === "line" ||
         chart.type === "area" ||
@@ -300,6 +314,8 @@ function sortChartData(data: DataRow[], chart: Chart): DataRow[] {
         });
     }
 
+    // Categorical dimension: sort by the first y-value descending so the
+    // most significant category appears first.
     const firstY = chart.yKeys[0]?.key;
     if (!firstY) return data;
 
