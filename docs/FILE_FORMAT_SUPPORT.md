@@ -27,12 +27,6 @@ Last updated: 2026-05-10 — based on E2E and unit tests against the development
 
 ## ❌ Confirmed bugs
 
-### Row count off-by-one
-- **Formats:** CSV and XLSX
-- **Description:** `numberOfRows` includes the header row in the count. A file with 1 header + 10 data rows reports `numberOfRows: 11`.
-- **Code:** `getCsvMetadata` in `src/lib/helpers/parseFiles/index.ts:14` — `rows.split("\n").length` includes the header. `getExcelMetadata` in the same file — `range.e.r - range.s.r + 1` includes row 0 (header).
-- **Impact:** Cosmetic — the number shown in the UI does not reflect the actual data rows.
-
 ### Single-column CSV: AI treats all values as headers
 - **Formats:** CSV
 - **Description:** When a CSV has a single column with similar text values, `getHeadersFlow` cannot distinguish the header row from data rows and returns all rows as headers. Example: a CSV `country\nMexico\nColombia\nPeru` returns `headers: ["country","Mexico","Colombia","Peru"]` instead of `["country"]`.

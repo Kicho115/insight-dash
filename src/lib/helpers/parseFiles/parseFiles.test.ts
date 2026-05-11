@@ -58,19 +58,17 @@ describe("getExcelMetadata", () => {
         expect(result.sheets[0].numberOfColumns).toBe(4);
     });
 
-    // ── 2. Row count (off-by-one esperado) ───────────────────────────────────
+    // ── 2. Row count ─────────────────────────────────────────────────────────
 
-    it("reporta numberOfRows incluyendo la fila de headers (off-by-one conocido)", async () => {
-        // 1 header + 10 datos = 11 filas totales en el rango
+    it("reporta numberOfRows excluyendo la fila de headers", async () => {
+        // 1 header + 10 datos = 10 filas de datos
         const rows: unknown[][] = [["A", "B", "C"]];
         for (let i = 1; i <= 10; i++) rows.push([i, i * 2, i * 3]);
 
         const wb = makeWorkbook(rows);
         const result = await getExcelMetadata(toArrayBuffer(wb));
 
-        // El cálculo actual es range.e.r - range.s.r + 1
-        // Con 11 filas reales reporta 11, pero los datos reales son 10
-        expect(result.sheets[0].numberOfRows).toBe(11); // off-by-one confirmado
+        expect(result.sheets[0].numberOfRows).toBe(10);
     });
 
     // ── 3. Celdas con fórmulas ────────────────────────────────────────────────
@@ -268,12 +266,11 @@ describe("getCsvMetadata", () => {
         expect(result.headers.length).toBeGreaterThan(0);
     });
 
-    it("numberOfRows incluye la fila de headers (off-by-one conocido para CSV)", async () => {
-        // 1 header + 5 datos
+    it("numberOfRows reporta solo filas de datos, sin contar el header", async () => {
+        // 1 header + 5 datos = 5 filas de datos
         const csv = "a,b,c\n1,2,3\n4,5,6\n7,8,9\n10,11,12\n13,14,15";
         const result = await getCsvMetadata(csv);
-        // rows.split('\n') = 6 elementos, pero solo 5 son datos
-        expect(result.numberOfRows).toBe(6);
+        expect(result.numberOfRows).toBe(5);
     });
 
     it("CSV con una sola columna", async () => {

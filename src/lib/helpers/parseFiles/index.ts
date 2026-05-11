@@ -12,7 +12,7 @@ const MAX_ROWS_TO_CHECK = 10;
 export async function getCsvMetadata(csvData: string): Promise<CsvMetadata> {
     try {
         const rows = csvData.split("\n");
-        const numberOfRows = rows.length;
+        const numberOfRows = rows.length - 1;
         const headers = await getHeadersFlow(rows.slice(0, MAX_ROWS_TO_CHECK));
 
         return {
@@ -139,7 +139,7 @@ export async function getExcelMetadata(
             const range = xlsx.utils.decode_range(ref);
             return {
                 name: sheetName,
-                numberOfRows: range.e.r - range.s.r + 1,
+                numberOfRows: range.e.r - range.s.r,
                 numberOfColumns: range.e.c - range.s.c + 1,
             };
         });
