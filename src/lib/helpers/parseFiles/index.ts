@@ -50,7 +50,8 @@ function cleanRow(row: unknown[]): string {
 }
 
 export async function getExcelMetadata(
-    xlsxData: ArrayBuffer
+    xlsxData: ArrayBuffer,
+    selectedSheetName?: string
 ): Promise<ExcelMetadata> {
     try {
         const workbook = xlsx.read(xlsxData, {
@@ -60,12 +61,16 @@ export async function getExcelMetadata(
         });
 
         // TODO: Verify that the file is correct before processing metadata
-        const firstSheetName = workbook.SheetNames[0];
-        if (!firstSheetName) {
+        const targetSheetName =
+            selectedSheetName && workbook.SheetNames.includes(selectedSheetName)
+                ? selectedSheetName
+                : workbook.SheetNames[0];
+
+        if (!targetSheetName) {
             throw new Error("No sheets found in workbook");
         }
 
-        const worksheet = workbook.Sheets[firstSheetName];
+        const worksheet = workbook.Sheets[targetSheetName];
 
         // Get the actual range of data (not including empty columns at the end)
         const range = worksheet["!ref"]
@@ -148,6 +153,7 @@ export async function getExcelMetadata(
             summary: "",
             headers,
             sheets,
+            selectedSheet: targetSheetName,
         };
     } catch (error) {
         console.error("Error getting Excel metadata:", error);

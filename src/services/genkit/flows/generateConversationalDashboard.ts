@@ -46,6 +46,7 @@ export interface ConversationalDashboardInput {
     headers: string[];
     summary: string;
     conversationHistory: ChatMessage[];
+    selectedSheet?: string;
 }
 
 function extractPythonCode(text: string): string {
@@ -89,6 +90,9 @@ export async function generateConversationalDashboardFlow(
               return "csv";
           })();
     const filePath = `/home/user/data.${safeExtension}`;
+    const sheetArg = input.selectedSheet
+        ? `, sheet_name=${JSON.stringify(input.selectedSheet)}`
+        : "";
     const conversationText = serializeMessages(
         input.conversationHistory
             .filter((m) => m.role !== "system")
@@ -122,7 +126,7 @@ Write a single self-contained Python script that:
    expected = ${JSON.stringify(input.headers)}
    df = None
    for skip in range(10):
-       tmp = pd.read_excel(path, skiprows=skip)  # or pd.read_csv
+       tmp = pd.read_excel(path, skiprows=skip${sheetArg})  # or pd.read_csv
        if all(c in tmp.columns for c in expected):
            df = tmp
            break

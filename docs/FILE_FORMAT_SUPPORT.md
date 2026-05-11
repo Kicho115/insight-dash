@@ -2,7 +2,7 @@
 
 Compatibility status for CSV and XLSX in metadata extraction and dashboard generation.
 
-Last updated: 2026-05-10 — based on E2E and unit tests against the development server.
+Last updated: 2026-05-11 — based on E2E and unit tests against the development server.
 
 ---
 
@@ -17,7 +17,7 @@ Last updated: 2026-05-10 — based on E2E and unit tests against the development
 | Dates stored as serial numbers | — | ✅ |
 | Dates stored as native Date objects | — | ✅ |
 | Boolean columns | — | ✅ |
-| Multiple sheets (uses first sheet only) | — | ✅ |
+| Multiple sheets with sheet selector UI | — | ✅ |
 | Headers in row 2 with title in row 1 | — | ✅ |
 | Formulas with cached value | — | ✅ |
 | Conversational dashboard from chatbot | ✅ | ✅ |
@@ -28,10 +28,6 @@ Last updated: 2026-05-10 — based on E2E and unit tests against the development
 ---
 
 ## ⚠️ Known limitations (not implemented)
-
-### Sheet selection in XLSX
-- Only the first sheet of the workbook is analyzed. There is no UI for the user to choose a different sheet.
-- If the relevant data is on sheet 2 or 3, the dashboard is generated with incorrect data and no warning is shown.
 
 ### Row count inaccurate when headers are not in row 1
 - For XLSX files where data starts after a title row (headers in row 2+), `numberOfRows` counts from the beginning of the sheet range, not from the detected header row. A file with 1 title row + 1 header row + 6 data rows reports `numberOfRows: 7` instead of 6.

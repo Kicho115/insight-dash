@@ -61,6 +61,11 @@ export async function POST(
         const fileExtension =
             file.name?.split(".").pop()?.toLowerCase() ?? "csv";
 
+        const selectedSheet =
+            file.metadata && "selectedSheet" in file.metadata
+                ? (file.metadata as { selectedSheet?: string }).selectedSheet
+                : undefined;
+
         const structure = await generateConversationalDashboardFlow({
             fileName: file.displayName ?? file.name,
             fileExtension,
@@ -68,6 +73,7 @@ export async function POST(
             headers,
             summary,
             conversationHistory: body.messages,
+            selectedSheet,
         });
 
         const dashboard = dashboardSchema.parse(structure);

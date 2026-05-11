@@ -123,6 +123,7 @@ function rowsFromWorksheet(
 async function loadRowsFromFile(
     filePath: string,
     headers: string[],
+    selectedSheetName?: string,
 ): Promise<DataRow[]> {
     const fileExtension = filePath.split(".").pop()?.toLowerCase();
     const downloadUrl = await getFileDownloadURL(filePath);
@@ -143,9 +144,12 @@ async function loadRowsFromFile(
     if (fileExtension === "xlsx" || fileExtension === "xls") {
         const arrayBuffer = await response.arrayBuffer();
         const workbook = xlsx.read(arrayBuffer, { type: "array", raw: true });
-        const firstSheetName = workbook.SheetNames[0];
-        if (!firstSheetName) return [];
-        return rowsFromWorksheet(workbook.Sheets[firstSheetName], headers);
+        const sheetName =
+            selectedSheetName && workbook.SheetNames.includes(selectedSheetName)
+                ? selectedSheetName
+                : workbook.SheetNames[0];
+        if (!sheetName) return [];
+        return rowsFromWorksheet(workbook.Sheets[sheetName], headers);
     }
 
     throw new Error("Unsupported file type. Only CSV and XLSX are supported.");
@@ -463,7 +467,12 @@ export async function POST(
                 ? (metadata as { numberOfRows: number }).numberOfRows
                 : undefined;
 
-        const rows = await loadRowsFromFile(file.path, headers);
+        const selectedSheet =
+            metadata && "selectedSheet" in metadata
+                ? (metadata as { selectedSheet?: string }).selectedSheet
+                : undefined;
+
+        const rows = await loadRowsFromFile(file.path, headers, selectedSheet);
         if (rows.length === 0) {
             return NextResponse.json(
                 { error: "No usable rows were found in the source file." },
