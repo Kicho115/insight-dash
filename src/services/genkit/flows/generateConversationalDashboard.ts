@@ -167,9 +167,7 @@ Return ONLY the Python code, no explanation.
             throw new Error("Python script produced no output. Check the generated code.");
         }
 
-        // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
-        const { output } = await withRetry(() => ai.generate({
-            prompt: `
+        const formatterPrompt = (extraInstruction = "") => `
 Convert the following computed data into a dashboard JSON object.
 Use ONLY the values present in the computed data — do not invent or substitute metrics.
 
@@ -188,11 +186,26 @@ ${JSON.stringify(input.headers)}
 - xKey and yKeys[].key must exactly match the provided column headers.
 - format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
 - CRITICAL: Never invent, estimate, or substitute values. If a value is missing, marked as NO_DATA, or NaN in the computed data, omit that KPI entirely. Never use 0 as a placeholder.
-`,
+- CRITICAL: The output must always contain at least 1 chart. If the computed data contains any array or tabular result, map it to a chart.${extraInstruction}
+`;
+
+        // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
+        let { output } = await withRetry(() => ai.generate({
+            prompt: formatterPrompt(),
             output: { schema: dashboardSchema },
         }));
 
         if (!output) throw new Error("AI did not return a dashboard structure.");
+
+        // Retry formatter once if no charts were produced
+        if (output.charts.length === 0) {
+            const retry = await withRetry(() => ai.generate({
+                prompt: formatterPrompt("\n- You returned 0 charts in the previous attempt. You MUST include at least 1 chart this time using any array data present above."),
+                output: { schema: dashboardSchema },
+            }));
+            if (retry.output) output = retry.output;
+        }
+
         return output;
 
     } finally {
