@@ -108,7 +108,7 @@ You are a data analyst. Write Python code using pandas to compute the exact metr
 
 ## File information
 - File path: ${filePath}
-- Column headers: ${JSON.stringify(input.headers)}
+- Expected column headers: ${JSON.stringify(input.headers)}
 - Summary: ${input.summary}
 
 ## Conversation history
@@ -117,6 +117,18 @@ ${conversationText}
 ## Instructions
 Write a single self-contained Python script that:
 1. Loads the file from \`${filePath}\` using pandas (use pd.read_csv or pd.read_excel based on the extension).
+   IMPORTANT: The file may have title rows before the actual header row. After loading, check if the expected columns ${JSON.stringify(input.headers)} exist. If they don't, re-read the file searching for the correct header row:
+   \`\`\`python
+   expected = ${JSON.stringify(input.headers)}
+   df = None
+   for skip in range(10):
+       tmp = pd.read_excel(path, skiprows=skip)  # or pd.read_csv
+       if all(c in tmp.columns for c in expected):
+           df = tmp
+           break
+   if df is None:
+       raise ValueError("Could not find expected headers in file")
+   \`\`\`
 2. When filtering by string column values, use case-insensitive comparison (e.g. df['col'].str.lower() == 'value').
 3. Computes a complete dashboard with BOTH KPIs and chart data based on what the user requested:
    - Always include at least 2-4 KPI values. Print each as a labeled line, e.g. "avg_charges_smokers: 32050.23"

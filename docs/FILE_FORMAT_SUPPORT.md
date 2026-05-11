@@ -20,24 +20,10 @@ Last updated: 2026-05-10 — based on E2E and unit tests against the development
 | Multiple sheets (uses first sheet only) | — | ✅ |
 | Headers in row 2 with title in row 1 | — | ✅ |
 | Formulas with cached value | — | ✅ |
-| Conversational dashboard from chatbot | ❌ | ❌ |
+| Conversational dashboard from chatbot | ✅ | ✅ |
 | Static dashboard generation | ✅ | ✅ |
 
 ---
-
-## ❌ Confirmed bugs
-
-### Single-column CSV: AI treats all values as headers
-- **Formats:** CSV
-- **Description:** When a CSV has a single column with similar text values, `getHeadersFlow` cannot distinguish the header row from data rows and returns all rows as headers. Example: a CSV `country\nMexico\nColombia\nPeru` returns `headers: ["country","Mexico","Colombia","Peru"]` instead of `["country"]`.
-- **Code:** `src/services/genkit/flows/getHeaders.ts` — the AI lacks enough context to differentiate when there is only one text column.
-- **Impact:** Functional — the dashboard is generated with incorrect columns.
-
-### Conversational dashboard returns empty charts and KPIs
-- **Formats:** CSV and XLSX
-- **Description:** The `/api/files/[fileId]/chat-dashboard` endpoint responds 200 but returns `kpis: [], charts: []`. The `<generate-dashboard/>` token is emitted correctly for specific requests (e.g. "Show me the sales trend by month in a line chart"), but the final JSON has no content.
-- **Possible cause:** The E2B sandbox runs the generation code but does not return the output correctly, or there is a parsing issue with the sandbox result.
-- **Impact:** Functional — the user sees a blank dashboard even when the dataset has data and the request is specific enough.
 
 ---
 
@@ -46,6 +32,10 @@ Last updated: 2026-05-10 — based on E2E and unit tests against the development
 ### Sheet selection in XLSX
 - Only the first sheet of the workbook is analyzed. There is no UI for the user to choose a different sheet.
 - If the relevant data is on sheet 2 or 3, the dashboard is generated with incorrect data and no warning is shown.
+
+### Row count inaccurate when headers are not in row 1
+- For XLSX files where data starts after a title row (headers in row 2+), `numberOfRows` counts from the beginning of the sheet range, not from the detected header row. A file with 1 title row + 1 header row + 6 data rows reports `numberOfRows: 7` instead of 6.
+- Fixing this requires knowing the header row position at metadata time, which is only determined after the AI header detection step runs.
 
 ### Formulas without cached value
 - Cells with formulas that have no pre-calculated value (`.v` absent) are treated as empty.
