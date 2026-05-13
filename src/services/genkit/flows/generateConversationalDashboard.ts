@@ -46,6 +46,7 @@ export interface ConversationalDashboardInput {
     headers: string[];
     summary: string;
     conversationHistory: ChatMessage[];
+    selectedSheet?: string;
 }
 
 function extractPythonCode(text: string): string {
@@ -89,6 +90,9 @@ export async function generateConversationalDashboardFlow(
               return "csv";
           })();
     const filePath = `/home/user/data.${safeExtension}`;
+    const sheetArg = input.selectedSheet
+        ? `, sheet_name=${JSON.stringify(input.selectedSheet)}`
+        : "";
     const conversationText = serializeMessages(
         input.conversationHistory
             .filter((m) => m.role !== "system")
@@ -101,14 +105,12 @@ export async function generateConversationalDashboardFlow(
         sbx = await Sandbox.create({ timeoutMs: 120_000 });
         await sbx.files.write(filePath, input.fileBuffer);
 
-        // Step 1: AI writes Python code based on the conversation (plain text — no tools)
-        const codeResult = await withRetry(() => ai.generate({
-            prompt: `
+        const codePrompt = `
 You are a data analyst. Write Python code using pandas to compute the exact metrics requested in this conversation.
 
 ## File information
 - File path: ${filePath}
-- Column headers: ${JSON.stringify(input.headers)}
+- Expected column headers: ${JSON.stringify(input.headers)}
 - Summary: ${input.summary}
 
 ## Conversation history
@@ -117,6 +119,18 @@ ${conversationText}
 ## Instructions
 Write a single self-contained Python script that:
 1. Loads the file from \`${filePath}\` using pandas (use pd.read_csv or pd.read_excel based on the extension).
+   IMPORTANT: The file may have title rows before the actual header row. After loading, check if the expected columns ${JSON.stringify(input.headers)} exist. If they don't, re-read the file searching for the correct header row:
+   \`\`\`python
+   expected = ${JSON.stringify(input.headers)}
+   df = None
+   for skip in range(10):
+       tmp = pd.read_excel(path, skiprows=skip${sheetArg})  # or pd.read_csv
+       if all(c in tmp.columns for c in expected):
+           df = tmp
+           break
+   if df is None:
+       raise ValueError("Could not find expected headers in file")
+   \`\`\`
 2. When filtering by string column values, use case-insensitive comparison (e.g. df['col'].str.lower() == 'value').
 3. Computes a complete dashboard with BOTH KPIs and chart data based on what the user requested:
    - Always include at least 2-4 KPI values. Print each as a labeled line, e.g. "avg_charges_smokers: 32050.23"
@@ -126,38 +140,38 @@ Write a single self-contained Python script that:
 5. Prints all results clearly so they can be parsed.
 
 Return ONLY the Python code, no explanation.
-`,
-        }));
+`;
 
-        const pythonCode = extractPythonCode(codeResult.text ?? "");
+        // Steps 1+2: generate Python code and execute in E2B, with retry on empty output
+        let computedData = "";
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            const codeResult = await withRetry(() => ai.generate({ prompt: codePrompt }));
+            const pythonCode = extractPythonCode(codeResult.text ?? "");
 
-        if (!pythonCode) {
-            throw new Error("AI did not generate Python code.");
+            if (!pythonCode) {
+                if (attempt === 3) throw new Error("AI did not generate Python code.");
+                continue;
+            }
+
+            const execution = await sbx.runCode(pythonCode, { timeoutMs: 30_000 });
+            const stdout = (execution.text || execution.logs.stdout.join("\n")).trim();
+            const stderr = execution.logs.stderr.join("\n").trim();
+
+            if (!stdout && stderr) {
+                if (attempt === 3) throw new Error(`Python script failed:\n${stderr}`);
+                continue;
+            }
+
+            if (!stdout && !stderr) {
+                if (attempt === 3) throw new Error("Python script produced no output. Check the generated code.");
+                continue;
+            }
+
+            computedData = stdout || stderr;
+            break;
         }
 
-        // Step 2: Execute the code directly in E2B (no Genkit tools)
-        const execution = await sbx.runCode(pythonCode, { timeoutMs: 30_000 });
-
-        const stdout = (
-            execution.text ||
-            execution.logs.stdout.join("\n")
-        ).trim();
-
-        const stderr = execution.logs.stderr.join("\n").trim();
-
-        if (!stdout && stderr) {
-            throw new Error(`Python script failed:\n${stderr}`);
-        }
-
-        const computedData = stdout || stderr;
-
-        if (!computedData) {
-            throw new Error("Python script produced no output. Check the generated code.");
-        }
-
-        // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
-        const { output } = await withRetry(() => ai.generate({
-            prompt: `
+        const formatterPrompt = (extraInstruction = "") => `
 Convert the following computed data into a dashboard JSON object.
 Use ONLY the values present in the computed data — do not invent or substitute metrics.
 
@@ -176,11 +190,26 @@ ${JSON.stringify(input.headers)}
 - xKey and yKeys[].key must exactly match the provided column headers.
 - format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
 - CRITICAL: Never invent, estimate, or substitute values. If a value is missing, marked as NO_DATA, or NaN in the computed data, omit that KPI entirely. Never use 0 as a placeholder.
-`,
+- CRITICAL: The output must always contain at least 1 chart. If the computed data contains any array or tabular result, map it to a chart.${extraInstruction}
+`;
+
+        // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
+        let { output } = await withRetry(() => ai.generate({
+            prompt: formatterPrompt(),
             output: { schema: dashboardSchema },
         }));
 
         if (!output) throw new Error("AI did not return a dashboard structure.");
+
+        // Retry formatter once if no charts were produced
+        if (output.charts.length === 0) {
+            const retry = await withRetry(() => ai.generate({
+                prompt: formatterPrompt("\n- You returned 0 charts in the previous attempt. You MUST include at least 1 chart this time using any array data present above."),
+                output: { schema: dashboardSchema },
+            }));
+            if (retry.output) output = retry.output;
+        }
+
         return output;
 
     } finally {

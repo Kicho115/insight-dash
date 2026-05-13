@@ -35,9 +35,10 @@ Instructions:
    - Appear before the actual data rows
    - Don't contain purely numeric values or dates as data
    - May be followed by rows with corresponding data values
-4. Return ONLY the headers from the identified header row
+4. Return ONLY the column names from the identified header row — never include data values
 5. Preserve the exact text of the headers as they appear
 6. If multiple rows could be headers, choose the most descriptive one
+7. CRITICAL: There is always exactly ONE header row. The output array must contain exactly one string per column. For a file with a single column, return exactly one string. Data values (e.g. country names under a "Country" column) must never appear in your response.
 
 Return the column headers as an array of strings.`;
 

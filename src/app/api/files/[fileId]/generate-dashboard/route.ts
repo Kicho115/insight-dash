@@ -80,6 +80,19 @@ function rowsFromWorksheet(
     }
 
     const headerRowIndex = findHeaderRowIndex(matrix, headers);
+
+    // Build a column-index map from the actual header row in the file so that
+    // data rows are matched by name rather than by position. This handles files
+    // where the stored metadata headers differ in order from the file itself.
+    const actualHeaderRow = (matrix[headerRowIndex] ?? []).map((cell) =>
+        normalizeToken(String(cell ?? "")),
+    );
+    const headerToColIndex = new Map<string, number>();
+    headers.forEach((header) => {
+        const idx = actualHeaderRow.indexOf(normalizeToken(header));
+        if (idx !== -1) headerToColIndex.set(header, idx);
+    });
+
     const dataRows = matrix.slice(
         headerRowIndex + 1,
         headerRowIndex + 1 + MAX_INPUT_ROWS,
@@ -88,8 +101,10 @@ function rowsFromWorksheet(
     return dataRows
         .map((row) => {
             const record: DataRow = {};
-            headers.forEach((header, index) => {
-                record[header] = row[index] ?? null;
+            headers.forEach((header) => {
+                const colIndex = headerToColIndex.get(header);
+                record[header] =
+                    colIndex !== undefined ? (row[colIndex] ?? null) : null;
             });
             return record;
         })
@@ -108,6 +123,7 @@ function rowsFromWorksheet(
 async function loadRowsFromFile(
     filePath: string,
     headers: string[],
+    selectedSheetName?: string,
 ): Promise<DataRow[]> {
     const fileExtension = filePath.split(".").pop()?.toLowerCase();
     const downloadUrl = await getFileDownloadURL(filePath);
@@ -128,9 +144,12 @@ async function loadRowsFromFile(
     if (fileExtension === "xlsx" || fileExtension === "xls") {
         const arrayBuffer = await response.arrayBuffer();
         const workbook = xlsx.read(arrayBuffer, { type: "array", raw: true });
-        const firstSheetName = workbook.SheetNames[0];
-        if (!firstSheetName) return [];
-        return rowsFromWorksheet(workbook.Sheets[firstSheetName], headers);
+        const sheetName =
+            selectedSheetName && workbook.SheetNames.includes(selectedSheetName)
+                ? selectedSheetName
+                : workbook.SheetNames[0];
+        if (!sheetName) return [];
+        return rowsFromWorksheet(workbook.Sheets[sheetName], headers);
     }
 
     throw new Error("Unsupported file type. Only CSV and XLSX are supported.");
@@ -267,6 +286,20 @@ function isLikelyTimeDimension(xKey: string): boolean {
 function sortChartData(data: DataRow[], chart: Chart): DataRow[] {
     if (data.length === 0) return data;
 
+    const xValues = data.map((row) => String(row[chart.xKey] ?? ""));
+
+    // If every x-axis value is numeric (e.g. age, score, year-as-number),
+    // sort ascending regardless of chart type so the axis reads naturally.
+    const allNumeric = xValues.every(
+        (v) => v !== "" && Number.isFinite(Number(v)),
+    );
+    if (allNumeric) {
+        return [...data].sort(
+            (a, b) => Number(a[chart.xKey] ?? 0) - Number(b[chart.xKey] ?? 0),
+        );
+    }
+
+    // Time-series charts and time-dimension columns: sort chronologically.
     if (
         chart.type === "line" ||
         chart.type === "area" ||
@@ -285,6 +318,8 @@ function sortChartData(data: DataRow[], chart: Chart): DataRow[] {
         });
     }
 
+    // Categorical dimension: sort by the first y-value descending so the
+    // most significant category appears first.
     const firstY = chart.yKeys[0]?.key;
     if (!firstY) return data;
 
@@ -351,15 +386,53 @@ function hydrateChart(chart: Chart, rows: DataRow[]): Chart {
     };
 }
 
+function resolveColumnKey(
+    key: string,
+    headers: string[],
+): string | undefined {
+    if (headers.includes(key)) return key;
+    const normalized = normalizeToken(key);
+    return headers.find((h) => normalizeToken(h) === normalized);
+}
+
+// Sanitize AI-generated structure so that xKey/yKey references that don't
+// exactly match actual headers are corrected via case-insensitive lookup.
+// Charts or yKeys that still can't be resolved are dropped to avoid
+// grouping everything under "Unknown".
+function sanitizeDashboardStructure(
+    structure: Dashboard,
+    headers: string[],
+): Dashboard {
+    const charts = structure.charts
+        .map((chart) => {
+            const xKey = resolveColumnKey(chart.xKey, headers);
+            if (!xKey) return null;
+
+            const yKeys = chart.yKeys
+                .map((yk) => {
+                    const key = resolveColumnKey(yk.key, headers);
+                    return key ? { ...yk, key } : null;
+                })
+                .filter((yk): yk is NonNullable<typeof yk> => yk !== null);
+
+            if (yKeys.length === 0) return null;
+            return { ...chart, xKey, yKeys };
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null);
+
+    return { ...structure, charts };
+}
+
 function hydrateDashboard(
     structure: Dashboard,
     rows: DataRow[],
     headers: string[],
 ): Dashboard {
+    const sanitized = sanitizeDashboardStructure(structure, headers);
     return {
-        title: structure.title,
-        kpis: hydrateKpis(structure.kpis, rows, headers),
-        charts: structure.charts.map((chart) => hydrateChart(chart, rows)),
+        title: sanitized.title,
+        kpis: hydrateKpis(sanitized.kpis, rows, headers),
+        charts: sanitized.charts.map((chart) => hydrateChart(chart, rows)),
     };
 }
 
@@ -394,7 +467,12 @@ export async function POST(
                 ? (metadata as { numberOfRows: number }).numberOfRows
                 : undefined;
 
-        const rows = await loadRowsFromFile(file.path, headers);
+        const selectedSheet =
+            metadata && "selectedSheet" in metadata
+                ? (metadata as { selectedSheet?: string }).selectedSheet
+                : undefined;
+
+        const rows = await loadRowsFromFile(file.path, headers, selectedSheet);
         if (rows.length === 0) {
             return NextResponse.json(
                 { error: "No usable rows were found in the source file." },
