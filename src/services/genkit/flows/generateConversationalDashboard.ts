@@ -105,9 +105,7 @@ export async function generateConversationalDashboardFlow(
         sbx = await Sandbox.create({ timeoutMs: 120_000 });
         await sbx.files.write(filePath, input.fileBuffer);
 
-        // Step 1: AI writes Python code based on the conversation (plain text — no tools)
-        const codeResult = await withRetry(() => ai.generate({
-            prompt: `
+        const codePrompt = `
 You are a data analyst. Write Python code using pandas to compute the exact metrics requested in this conversation.
 
 ## File information
@@ -142,33 +140,35 @@ Write a single self-contained Python script that:
 5. Prints all results clearly so they can be parsed.
 
 Return ONLY the Python code, no explanation.
-`,
-        }));
+`;
 
-        const pythonCode = extractPythonCode(codeResult.text ?? "");
+        // Steps 1+2: generate Python code and execute in E2B, with retry on empty output
+        let computedData = "";
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            const codeResult = await withRetry(() => ai.generate({ prompt: codePrompt }));
+            const pythonCode = extractPythonCode(codeResult.text ?? "");
 
-        if (!pythonCode) {
-            throw new Error("AI did not generate Python code.");
-        }
+            if (!pythonCode) {
+                if (attempt === 3) throw new Error("AI did not generate Python code.");
+                continue;
+            }
 
-        // Step 2: Execute the code directly in E2B (no Genkit tools)
-        const execution = await sbx.runCode(pythonCode, { timeoutMs: 30_000 });
+            const execution = await sbx.runCode(pythonCode, { timeoutMs: 30_000 });
+            const stdout = (execution.text || execution.logs.stdout.join("\n")).trim();
+            const stderr = execution.logs.stderr.join("\n").trim();
 
-        const stdout = (
-            execution.text ||
-            execution.logs.stdout.join("\n")
-        ).trim();
+            if (!stdout && stderr) {
+                if (attempt === 3) throw new Error(`Python script failed:\n${stderr}`);
+                continue;
+            }
 
-        const stderr = execution.logs.stderr.join("\n").trim();
+            if (!stdout && !stderr) {
+                if (attempt === 3) throw new Error("Python script produced no output. Check the generated code.");
+                continue;
+            }
 
-        if (!stdout && stderr) {
-            throw new Error(`Python script failed:\n${stderr}`);
-        }
-
-        const computedData = stdout || stderr;
-
-        if (!computedData) {
-            throw new Error("Python script produced no output. Check the generated code.");
+            computedData = stdout || stderr;
+            break;
         }
 
         const formatterPrompt = (extraInstruction = "") => `
