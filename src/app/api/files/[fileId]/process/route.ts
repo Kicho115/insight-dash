@@ -78,17 +78,13 @@ export async function POST(
                 headers: columnHeaders,
             });
         } catch (processingError) {
-            // If the error is due to missing headers, set status to Action Required
-            if (processingError instanceof Error) {
-                if (processingError.message === "No headers found.") {
-                    await updateFileMetadata(fileId, {
-                        status: "Action Required",
-                    });
-                }
+            console.error("Error processing file:", processingError);
+            if (
+                processingError instanceof Error &&
+                processingError.message === "No headers found."
+            ) {
+                await updateFileMetadata(fileId, { status: "Action Required" });
             } else {
-                console.error("Error processing file:", processingError);
-
-                // Mark as Error if processing fails
                 await updateFileMetadata(fileId, { status: "Error" });
             }
 
