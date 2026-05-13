@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { StatusBadge } from "@/components/StatusBadge";
 import { File } from "@/types/file";
 import { acceptInvitation, declineInvitation } from "@/services/invitations";
+import { SearchBar } from "@/components/SearchBar";
 
 type SerializedFile = Omit<File, "createdAt" | "updatedAt"> & {
     createdAt: string;
@@ -96,6 +97,8 @@ export const HomeClient = ({ recentFiles, filesNeedingAttention }: HomeClientPro
 
             {/* Main Content */}
             <div className={styles.sectionsWrapper}>
+                <SearchBar placeholder="Search your files..." indexName="fileNames" />
+
                 {/* Recent Files Section */}
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle}>Recent Files</h2>

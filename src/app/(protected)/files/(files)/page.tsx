@@ -4,6 +4,7 @@ import { getFilesForUser } from "@/data/files";
 import { FilesTable } from "@/components/FilesTable";
 import { AddFileButton } from "./AddFileButton";
 import { getTeamsForUser } from "@/data/teams"; 
+import { SearchBar } from "@/components/SearchBar";
 
 // This line ensures this page is always dynamic
 export const dynamic = "force-dynamic";
@@ -35,6 +36,8 @@ export default async function FilesPage() {
                 </div>
                 <AddFileButton />
             </header>
+
+            <SearchBar placeholder="Search your files..." indexName="fileNames" />
 
             {/* 4. Pass server-fetched data as props to the Client Component */}
             <FilesTable
