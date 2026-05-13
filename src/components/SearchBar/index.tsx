@@ -14,7 +14,7 @@ interface SearchBarProps {
 
 export const SearchBar = ({ indexName, placeholder = "Search files..." }: SearchBarProps) => {
     const [query, setQuery] = useState("");
-    const [results, setResults] = useState<File[]>([]);
+    const [results, setResults] = useState<(File & { objectID?: string })[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ export const SearchBar = ({ indexName, placeholder = "Search files..." }: Search
                 if (searchResults && searchResults.length > 0) {
                     const firstResult = searchResults[0];
                     if ('hits' in firstResult) {
-                        setResults(firstResult.hits as unknown as File[]);
+                        setResults(firstResult.hits as unknown as (File & { objectID?: string })[]);
                     }
                 }
             } catch (error) {
@@ -95,8 +95,8 @@ export const SearchBar = ({ indexName, placeholder = "Search files..." }: Search
                     {results.length > 0 ? (
                         results.map((hit) => (
                             <Link
-                                key={hit.id || (hit as any).objectID}
-                                href={`/files/${hit.id || (hit as any).objectID}`}
+                                key={hit.id || hit.objectID}
+                                href={`/files/${hit.id || hit.objectID}`}
                                 className={styles.resultItem}
                                 onClick={() => {
                                     setIsOpen(false);
