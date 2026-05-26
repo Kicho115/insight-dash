@@ -152,6 +152,8 @@ Return ONLY the Python code, no explanation.
             break;
         }
 
+        const lastUserMessage = [...input.conversationHistory].reverse().find((m) => m.role === "user")?.content ?? "";
+
         const formatterPrompt = (extraInstruction = "") => `
 Convert the following computed data into a dashboard JSON object.
 Use ONLY the values present in the computed data — do not invent or substitute metrics.
@@ -162,6 +164,9 @@ ${computedData}
 ## Column headers available
 ${JSON.stringify(input.headers)}
 
+## User's original request
+${lastUserMessage}
+
 ## Rules
 - title: short human-readable dashboard name derived from the data topic.
 - kpis: one item per computed KPI value. Do not add KPIs not present in the data.
@@ -170,6 +175,7 @@ ${JSON.stringify(input.headers)}
   Fields: id (kebab-case), type ("bar"|"line"|"pie"|"area"), title, data (exact rows, max 20 for bar/pie, 40 for line/area), xKey, yKeys ([{ key, label }]).
 - xKey and yKeys[].key must exactly match the provided column headers.
 - format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
+- IMPORTANT: If the user's request explicitly mentions a chart type (e.g. "pie chart", "bar chart", "line chart"), use that type for the relevant charts. User preference overrides the default type selection.
 - CRITICAL: Never invent, estimate, or substitute values. If a value is missing, marked as NO_DATA, or NaN in the computed data, omit that KPI entirely. Never use 0 as a placeholder.
 - CRITICAL: The output must always contain at least 3 charts and at least 4 KPIs. If the computed data contains any array or tabular result, map it to a chart.
 - CRITICAL: If you don't have enough computed data for 3 charts or 4 KPIs, derive additional charts and KPIs from the available data (e.g., distributions, counts, totals by category).${extraInstruction}
