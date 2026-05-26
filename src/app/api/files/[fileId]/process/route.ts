@@ -12,6 +12,7 @@ import { summarizeFileFlow } from "@/services/genkit/flows/summarizeFile";
 import { parseJson } from "@/lib/api/validation";
 import { fileProcessSchema } from "@/lib/api/schemas";
 import { handleApiError } from "@/lib/api/errorHandler";
+import type { ExcelMetadata } from "@/types/file";
 
 /**
  * @function POST
@@ -63,11 +64,17 @@ export async function POST(
                 columnHeaders,
             });
 
-            // Update the file document in Firestore with the summary and headers
+            // Seed sheetsSummaries for xlsx so the first sheet switch is instant
+            const isExcel = "selectedSheet" in metadata;
+            const sheetsSummaries = isExcel
+                ? { [(metadata as ExcelMetadata).selectedSheet ?? (metadata as ExcelMetadata).sheets[0]?.name ?? ""]: summary }
+                : undefined;
+
             await updateFileMetadata(fileId, {
                 metadata: {
                     ...metadata,
                     summary,
+                    ...(sheetsSummaries ? { sheetsSummaries } : {}),
                 },
                 status: "Ready",
             });

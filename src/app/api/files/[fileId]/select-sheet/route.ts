@@ -80,10 +80,16 @@ export async function POST(
             sheetsHeaders = freshMetadata.sheetsHeaders;
         }
 
-        const { summary } = await summarizeFileFlow({
+        const cachedSummary = excelMetadata.sheetsSummaries?.[sheetName];
+        const summary = cachedSummary ?? (await summarizeFileFlow({
             fileName: file.displayName ?? file.name,
             columnHeaders: headers,
-        });
+        })).summary;
+
+        const sheetsSummaries: Record<string, string> = {
+            ...(excelMetadata.sheetsSummaries ?? {}),
+            [sheetName]: summary,
+        };
 
         await updateFileMetadata(fileId, {
             metadata: {
@@ -92,6 +98,7 @@ export async function POST(
                 selectedSheet: sheetName,
                 sheetsHeaders,
                 summary,
+                sheetsSummaries,
             },
             status: "Ready",
         });

@@ -4,6 +4,7 @@ import { getFileById } from "@/data/files";
 import { getFileDownloadURL } from "@/data/storage/files";
 import { handleApiError } from "@/lib/api/errorHandler";
 import { dashboardSchema } from "@/lib/api/schemas";
+import { sortChartData } from "@/lib/helpers/sortChartData";
 import { requireServerAuth } from "@/lib/serverAuth";
 import { generateConversationalDashboardFlow } from "@/services/genkit/flows/generateConversationalDashboard";
 
@@ -76,7 +77,14 @@ export async function POST(
             selectedSheet,
         });
 
-        const dashboard = dashboardSchema.parse(structure);
+        const parsed = dashboardSchema.parse(structure);
+        const dashboard = {
+            ...parsed,
+            charts: parsed.charts.map((chart) => ({
+                ...chart,
+                data: sortChartData(chart.data as Record<string, unknown>[], chart),
+            })),
+        };
 
         return NextResponse.json({ success: true, dashboard });
     } catch (error) {

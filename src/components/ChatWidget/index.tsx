@@ -50,24 +50,31 @@ export default function ChatWidget({
     }
 
     let cancelled = false;
+    const intervalRef = { current: -1 as number };
 
     const fetchStatus = async () => {
       try {
         const res = await fetch(`/api/files/${fileId}`, { cache: "no-store" });
         if (!res.ok) {
           if (!cancelled) { setStatus(null); setStatusChecked(true); }
+          clearInterval(intervalRef.current);
           return;
         }
         const data = await res.json();
-        if (!cancelled) { setStatus(data?.status ?? null); setStatusChecked(true); }
+        if (!cancelled) {
+          setStatus(data?.status ?? null);
+          setStatusChecked(true);
+          if (data?.status === "Ready") clearInterval(intervalRef.current);
+        }
       } catch {
         if (!cancelled) { setStatus(null); setStatusChecked(true); }
+        clearInterval(intervalRef.current);
       }
     };
 
     fetchStatus();
-    const intervalId = window.setInterval(fetchStatus, 3000);
-    return () => { cancelled = true; clearInterval(intervalId); };
+    intervalRef.current = window.setInterval(fetchStatus, 3000);
+    return () => { cancelled = true; clearInterval(intervalRef.current); };
   }, [fileId]);
 
   // Use external chatState if provided, otherwise fall back to own useChat

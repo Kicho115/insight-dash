@@ -7,6 +7,7 @@
 
 import { z } from "genkit";
 import { ai } from "@/services/genkit";
+import { withRetry } from "@/lib/helpers/withRetry";
 
 // Define the schema for the input
 const inputSchema = z.object({
@@ -61,10 +62,10 @@ This dataset tracks annual employee performance reviews for the 2024 fiscal year
         * File Name: \`${input.fileName}\`
         * Column Headers: \`${JSON.stringify(input.columnHeaders)}\``;
 
-        const { output } = await ai.generate({
+        const { output } = await withRetry(() => ai.generate({
             prompt,
             output: { schema: outputSchema },
-        });
+        }));
 
         if (!output) throw new Error("Failed to generate an answer");
         return output;
