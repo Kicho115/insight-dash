@@ -40,6 +40,7 @@ export type ExcelMetadata = {
     sheets: SheetInfo[];
     selectedSheet?: string;
     sheetsHeaders?: Record<string, string[]>;
+    sheetsSummaries?: Record<string, string>;
 };
 export interface SheetInfo {
     name: string;

@@ -7,6 +7,7 @@
 
 import { z } from "genkit";
 import { ai } from "@/services/genkit";
+import { withRetry } from "@/lib/helpers/withRetry";
 
 // Output schema redefined with Genkit's z to avoid Zod instance mismatch
 const kpiFormatSchema = z.enum(["number", "currency", "percentage"]);
@@ -44,6 +45,7 @@ const inputSchema = z.object({
         .min(1, "At least one column header is required"),
     summary: z.string().min(1, "Summary cannot be empty"),
     rowCount: z.number().int().positive().optional(),
+    extraInstruction: z.string().optional(),
 });
 
 export const generateDashboardFlow = ai.defineFlow(
@@ -65,14 +67,14 @@ Context: You are a data analyst assistant. You will receive a file name, column 
 You do NOT have access to the actual data rows — only the metadata. Follow these rules strictly:
 
 **KPI rules:**
-- Select 3 to 5 columns that likely contain numeric or aggregatable values (e.g. revenue, count, total, rate, score).
+- Select at least 4 columns that likely contain numeric or aggregatable values (e.g. revenue, count, total, rate, score). Minimum 4, up to 6.
 - Set \`value\` to \`0\` as a placeholder — real values will be computed later.
 - Set \`format\` based on the column name: use "currency" for price/revenue/cost/sales/amount, "percentage" for rate/ratio/pct/percent, "number" for everything else.
 - Set \`helper\` to a short phrase (under 6 words) describing what the KPI measures (e.g., "Total revenue across all sales", "Average customer satisfaction score").
 - Generate a unique \`id\` in kebab-case (e.g., "kpi-total-revenue").
 
 **Chart rules:**
-- Select 2 to 3 charts that would meaningfully visualize the data.
+- Select at least 3 charts that would meaningfully visualize the data. Minimum 3, up to 5.
 - Use "line" or "area" for time-series columns (date/month/year/week/period).
 - Use "bar" for categorical comparisons (region/department/category/product).
 - Use "pie" for proportional breakdowns with few categories (up to 5).
@@ -137,12 +139,12 @@ ${systemPrompt}
 - Column headers: \`${JSON.stringify(input.headers)}\`
 - Summary: ${input.summary}
 ${rowCountLine}
-`;
+${input.extraInstruction ? `\n### ADDITIONAL REQUIREMENT:\n${input.extraInstruction}` : ""}`;
 
-        const { output } = await ai.generate({
+        const { output } = await withRetry(() => ai.generate({
             prompt,
             output: { schema: dashboardSchema },
-        });
+        }));
 
         if (!output) throw new Error("Failed to generate dashboard structure");
         return output;

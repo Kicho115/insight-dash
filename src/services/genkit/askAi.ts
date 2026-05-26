@@ -1,6 +1,7 @@
 // src/services/genkit/askAi.ts
 import { ai } from "./index";
 import type { ChatMessage } from "@/lib/helpers/chat";
+import { withRetry } from "@/lib/helpers/withRetry";
 
 export interface AskAIInput {
     messages: ChatMessage[];
@@ -37,10 +38,10 @@ export async function askAI({
     parts.push("ASSISTANT:");
     const prompt = parts.join("\n\n");
 
-    const result = await ai.generate({
+    const result = await withRetry(() => ai.generate({
         prompt,
         config: { temperature },
-    });
+    }));
 
     const text = (result as { text?: string }).text ?? "";
 

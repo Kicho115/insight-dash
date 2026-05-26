@@ -5,6 +5,7 @@ import { ai } from "@/services/genkit";
 import { Sandbox } from "@e2b/code-interpreter";
 import type { ChatMessage } from "@/lib/helpers/chat";
 import { serializeMessages } from "@/lib/helpers/chat";
+import { withRetry } from "@/lib/helpers/withRetry";
 
 // Mirror the dashboard schema using Genkit's z to avoid Zod instance mismatch
 const kpiFormatSchema = z.enum(["number", "currency", "percentage"]);
@@ -55,26 +56,6 @@ function extractPythonCode(text: string): string {
     return text.trim();
 }
 
-function isTransientError(err: unknown): boolean {
-    if (err instanceof Error) {
-        const msg = err.message.toLowerCase();
-        return msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("429") || msg.includes("rate limit");
-    }
-    return false;
-}
-
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-            return await fn();
-        } catch (err) {
-            if (attempt === maxAttempts || !isTransientError(err)) throw err;
-            const delay = 2000 * attempt;
-            await new Promise((res) => setTimeout(res, delay));
-        }
-    }
-    throw new Error("Unreachable");
-}
 
 const ALLOWED_EXTENSIONS = new Set(["csv", "xls", "xlsx"]);
 
@@ -133,8 +114,8 @@ Write a single self-contained Python script that:
    \`\`\`
 2. When filtering by string column values, use case-insensitive comparison (e.g. df['col'].str.lower() == 'value').
 3. Computes a complete dashboard with BOTH KPIs and chart data based on what the user requested:
-   - Always include at least 2-4 KPI values. Print each as a labeled line, e.g. "avg_charges_smokers: 32050.23"
-   - Always include at least 1 chart dataset. Print each as a labeled JSON array, e.g. "chart_smoker_charges: [{'smoker': 'yes', 'avg_charges': 32050.23}, ...]"
+   - Always include at least 4 KPI values. Print each as a labeled line, e.g. "avg_charges_smokers: 32050.23"
+   - Always include at least 3 chart datasets. Print each as a labeled JSON array, e.g. "chart_smoker_charges: [{'smoker': 'yes', 'avg_charges': 32050.23}, ...]"
    - For groupby charts, aggregate the data (mean/sum/count) so the array has one row per group (not one row per record).
 4. If any computed value is NaN or the filtered dataset is empty, print an explicit message like "avg_charges_smokers: NO_DATA" instead of NaN.
 5. Prints all results clearly so they can be parsed.
@@ -190,7 +171,8 @@ ${JSON.stringify(input.headers)}
 - xKey and yKeys[].key must exactly match the provided column headers.
 - format: "currency" for charges/cost/revenue, "percentage" for rates, "number" otherwise.
 - CRITICAL: Never invent, estimate, or substitute values. If a value is missing, marked as NO_DATA, or NaN in the computed data, omit that KPI entirely. Never use 0 as a placeholder.
-- CRITICAL: The output must always contain at least 1 chart. If the computed data contains any array or tabular result, map it to a chart.${extraInstruction}
+- CRITICAL: The output must always contain at least 3 charts and at least 4 KPIs. If the computed data contains any array or tabular result, map it to a chart.
+- CRITICAL: If you don't have enough computed data for 3 charts or 4 KPIs, derive additional charts and KPIs from the available data (e.g., distributions, counts, totals by category).${extraInstruction}
 `;
 
         // Step 3: Format computed data into Dashboard JSON (structured output, no tools)
@@ -201,10 +183,14 @@ ${JSON.stringify(input.headers)}
 
         if (!output) throw new Error("AI did not return a dashboard structure.");
 
-        // Retry formatter once if no charts were produced
-        if (output.charts.length === 0) {
+        // Retry formatter if minimums not met
+        const needsRetry = output.charts.length < 3 || output.kpis.length < 4;
+        if (needsRetry) {
+            const missing: string[] = [];
+            if (output.charts.length < 3) missing.push(`at least 3 charts (you returned ${output.charts.length})`);
+            if (output.kpis.length < 4) missing.push(`at least 4 KPIs (you returned ${output.kpis.length})`);
             const retry = await withRetry(() => ai.generate({
-                prompt: formatterPrompt("\n- You returned 0 charts in the previous attempt. You MUST include at least 1 chart this time using any array data present above."),
+                prompt: formatterPrompt(`\n- Your previous attempt did not meet the minimums. You MUST include ${missing.join(" and ")} this time. Derive any missing charts/KPIs from the computed data above.`),
                 output: { schema: dashboardSchema },
             }));
             if (retry.output) output = retry.output;

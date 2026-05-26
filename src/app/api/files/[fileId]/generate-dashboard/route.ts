@@ -4,6 +4,7 @@ import { getFileById } from "@/data/files";
 import { getFileDownloadURL } from "@/data/storage/files";
 import { handleApiError } from "@/lib/api/errorHandler";
 import { dashboardSchema } from "@/lib/api/schemas/dashboard";
+import { sortChartData } from "@/lib/helpers/sortChartData";
 import { requireServerAuth } from "@/lib/serverAuth";
 import { generateDashboardFlow } from "@/services/genkit/flows/generateDashboard";
 import type { Chart, Dashboard, KPI } from "@/types/dashboard";
@@ -276,57 +277,6 @@ function hydrateKpis(kpis: KPI[], rows: DataRow[], headers: string[]): KPI[] {
     });
 }
 
-function isLikelyTimeDimension(xKey: string): boolean {
-    const token = xKey.toLowerCase();
-    return ["date", "time", "month", "year", "week", "day", "period"].some(
-        (part) => token.includes(part),
-    );
-}
-
-function sortChartData(data: DataRow[], chart: Chart): DataRow[] {
-    if (data.length === 0) return data;
-
-    const xValues = data.map((row) => String(row[chart.xKey] ?? ""));
-
-    // If every x-axis value is numeric (e.g. age, score, year-as-number),
-    // sort ascending regardless of chart type so the axis reads naturally.
-    const allNumeric = xValues.every(
-        (v) => v !== "" && Number.isFinite(Number(v)),
-    );
-    if (allNumeric) {
-        return [...data].sort(
-            (a, b) => Number(a[chart.xKey] ?? 0) - Number(b[chart.xKey] ?? 0),
-        );
-    }
-
-    // Time-series charts and time-dimension columns: sort chronologically.
-    if (
-        chart.type === "line" ||
-        chart.type === "area" ||
-        isLikelyTimeDimension(chart.xKey)
-    ) {
-        return [...data].sort((a, b) => {
-            const aValue = String(a[chart.xKey] ?? "");
-            const bValue = String(b[chart.xKey] ?? "");
-            const aTime = Date.parse(aValue);
-            const bTime = Date.parse(bValue);
-
-            if (!Number.isNaN(aTime) && !Number.isNaN(bTime)) {
-                return aTime - bTime;
-            }
-            return aValue.localeCompare(bValue);
-        });
-    }
-
-    // Categorical dimension: sort by the first y-value descending so the
-    // most significant category appears first.
-    const firstY = chart.yKeys[0]?.key;
-    if (!firstY) return data;
-
-    return [...data].sort(
-        (a, b) => Number(b[firstY] ?? 0) - Number(a[firstY] ?? 0),
-    );
-}
 
 function maxPointsForChart(chartType: Chart["type"]): number {
     if (chartType === "pie") return MAX_PIE_POINTS;
@@ -480,12 +430,31 @@ export async function POST(
             );
         }
 
-        const structure = await generateDashboardFlow({
+        let structure = await generateDashboardFlow({
             fileName: file.displayName || file.name,
             headers,
             summary,
             rowCount,
         });
+
+        if (structure.charts.length < 3 || structure.kpis.length < 4) {
+            const missing: string[] = [];
+            if (structure.charts.length < 3) missing.push(`at least 3 charts (you returned ${structure.charts.length})`);
+            if (structure.kpis.length < 4) missing.push(`at least 4 KPIs (you returned ${structure.kpis.length})`);
+            const retry = await generateDashboardFlow({
+                fileName: file.displayName || file.name,
+                headers,
+                summary,
+                rowCount,
+                extraInstruction: `Your previous response did not meet the minimums. You MUST include ${missing.join(" and ")}. Use additional columns from the headers to fill the requirement.`,
+            });
+            if (
+                retry.charts.length >= structure.charts.length &&
+                retry.kpis.length >= structure.kpis.length
+            ) {
+                structure = retry;
+            }
+        }
 
         const hydrated = hydrateDashboard(structure, rows, headers);
         const dashboard = dashboardSchema.parse(hydrated);

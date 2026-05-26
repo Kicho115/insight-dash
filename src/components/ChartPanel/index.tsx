@@ -180,6 +180,15 @@ export function ChartPanel({ chart }: Props) {
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: { position: "bottom" },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => {
+                                            const total = (ctx.dataset.data as number[]).reduce((s, v) => s + Number(v), 0);
+                                            const pct = total > 0 ? ((Number(ctx.raw) / total) * 100).toFixed(1) : "0.0";
+                                            return `${ctx.label}: ${pct}%`;
+                                        },
+                                    },
+                                },
                             },
                         }}
                     />
