@@ -7,6 +7,7 @@ import styles from "./styles.module.css";
 import { askAi } from "@/services/ai";
 import type { ChatMessage } from "@/lib/helpers/chat";
 import { IoSend, IoChatbubblesOutline, IoClose } from "react-icons/io5";
+import ReactMarkdown from "react-markdown";
 
 
 export default function FileChat() {
@@ -110,7 +111,11 @@ export default function FileChat() {
           <div className={styles.body} ref={viewportRef}>
             {messages.map((m: ChatMessage, idx: number) => (
               <div key={idx} className={m.role === "user" ? styles.rowUser : styles.rowAssistant}>
-                <div className={styles.bubble}>{m.content}</div>
+                <div className={styles.bubble}>
+                  {m.role === "assistant" ? (
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  ) : m.content}
+                </div>
               </div>
             ))}
             {sending && (
