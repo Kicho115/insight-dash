@@ -6,6 +6,7 @@ import styles from "./styles.module.css";
 import { IoChatbubblesOutline, IoClose, IoSend, IoBarChartOutline } from "react-icons/io5";
 import { useChat } from "@/hooks/useChat";
 import type { ChatMessage } from "@/lib/helpers/chat";
+import ReactMarkdown from "react-markdown";
 
 interface ChatState {
   messages: ChatMessage[];
@@ -132,7 +133,9 @@ export default function ChatWidget({
             {messages.map((m: ChatMessage, idx: number) => (
               <div key={idx} className={m.role === "user" ? styles.rowUser : styles.rowAssistant}>
                 <div className={styles.bubble}>
-                  {m.content}
+                  {m.role === "assistant" ? (
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  ) : m.content}
                   {m.hasDashboard && (
                     <div>
                       {dashboardLoading && idx === messages.length - 1 ? (
